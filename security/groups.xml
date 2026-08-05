@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="group_student_manager" model="res.groups">
+        <field name="name">Student Details Manager</field>
+    </record>
+    <record id="group_academic_coordinator" model="res.groups">
+        <field name="name">Academic Coordinators</field>
+    </record>
+    <record id="group_course_coordinator" model="res.groups">
+        <field name="name">Course Coordinators</field>
+    </record>
+    <record id="group_tl_admission" model="res.groups">
+        <field name="name">TL Admission</field>
+    </record>
+    <record id="group_admission_officer" model="res.groups">
+        <field name="name">Admission Officer</field>
+    </record>
+</odoo>

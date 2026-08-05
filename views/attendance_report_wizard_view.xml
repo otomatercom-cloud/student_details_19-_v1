@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_attendance_report_result_form" model="ir.ui.view">
+        <field name="name">attendance.report.result.form</field>
+        <field name="model">attendance.report.result</field>
+        <field name="arch" type="xml">
+            <form string="Attendance Report">
+                <sheet>
+                    <field name="line_ids">
+                        <list>
+                            <field name="student_id"/>
+                            <field name="present_days" string="Present"/>
+                            <field name="absent_days" string="Absent"/>
+                            <field name="half_days" string="Half Day"/>
+                            <field name="total_days" string="Total"/>
+                            <field name="attendance_percentage" string="%" digits="[6,1]"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_attendance_report_wizard_form" model="ir.ui.view">
+        <field name="name">attendance.report.wizard.form</field>
+        <field name="model">attendance.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Monthly Attendance Report">
+                <group>
+                    <field name="batch_id"/>
+                    <field name="start_date"/>
+                    <field name="end_date"/>
+                </group>
+                <footer>
+                    <button name="action_generate_report" type="object"
+                            string="Generate" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_attendance_report_wizard" model="ir.actions.act_window">
+        <field name="name">Monthly Attendance Report</field>
+        <field name="res_model">attendance.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_attendance_report" name="Attendance Report"
+              parent="menu_st_attendance" action="action_attendance_report_wizard"
+              sequence="20"/>
+
+</odoo>

@@ -1,0 +1,188 @@
+/* Student Profile — SaaS card styling for the student.details form.
+   Lives here (not in student_deep_analysis) since this module must
+   look right on its own, even without Deep Analysis installed — the
+   dependency only goes one direction. */
+
+.o_form_view .sda-card {
+    --logic-green-dark: #033b2c;
+    --logic-green: #11522c;
+    --logic-green-light: #27a37e;
+    --logic-yellow: #f4c430;
+    --logic-white: #ffffff;
+    --logic-background: #f5f7f6;
+    --logic-border: #e4e9e6;
+    --logic-text: #1c2823;
+    --logic-muted: #6b7771;
+    --logic-danger: #dc3545;
+    --logic-info: #2563eb;
+
+    background: var(--logic-white);
+    border: 1px solid var(--logic-border);
+    border-left: 4px solid var(--logic-green-light);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(28, 40, 35, 0.04);
+}
+
+.o_form_view .sda-card .sda-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--logic-text);
+    margin-bottom: 14px;
+}
+.o_form_view .sda-card .sda-card-header .fa {
+    color: var(--logic-green-light);
+    font-size: 14px;
+}
+
+/* Section accent colours — same border-left trick, different colour
+   per section so the page has visual rhythm rather than a wall of
+   identical grey boxes. */
+.o_form_view .sda-card-portal { border-left-color: var(--logic-info); }
+.o_form_view .sda-card-mentor { border-left-color: var(--logic-green-light); }
+.o_form_view .sda-card-parent { border-left-color: var(--logic-yellow); }
+.o_form_view .sda-card-score { border-left-color: var(--logic-green); }
+.o_form_view .sda-card-portal .fa { color: var(--logic-info); }
+.o_form_view .sda-card-parent .fa { color: #b8860b; }
+.o_form_view .sda-card-score .fa { color: var(--logic-green); }
+
+/* Tidy up field label/value spacing inside these cards without
+   fighting Odoo's own group/table layout mechanics. */
+.o_form_view .sda-card .o_group {
+    margin: 0 !important;
+}
+.o_form_view .sda-card td.o_td_label {
+    color: var(--logic-muted);
+    font-weight: 600;
+    font-size: 12px;
+    padding-bottom: 6px !important;
+}
+.o_form_view .sda-card .o_field_widget {
+    font-size: 13px;
+}
+
+/* ── Profile header card (photo left / info right) ────────────────── */
+.o_form_view .sda-profile-card {
+    display: flex;
+    align-items: stretch;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--logic-border, #e4e9e6);
+    margin-bottom: 20px;
+}
+.o_form_view .sda-profile-photo-panel {
+    flex-shrink: 0;
+    width: 190px;
+    background: linear-gradient(135deg, #033b2c, #11522c);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 16px;
+}
+.o_form_view .sda-profile-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.35);
+}
+.o_form_view .sda-profile-info-panel {
+    flex: 1;
+    padding: 20px 24px;
+    background: #ffffff;
+}
+.o_form_view .sda-profile-regno {
+    margin-top: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #27a37e;
+    letter-spacing: 0.3px;
+}
+.o_form_view .sda-profile-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid;
+}
+.o_form_view .sda-profile-chip-blue { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.o_form_view .sda-profile-chip-green { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.o_form_view .sda-profile-chip-yellow { background: #fefce8; border-color: #fde68a; color: #92400e; }
+.o_form_view .sda-profile-chip-brand { background: #eef8f3; border-color: #bfe3d4; color: #11522c; }
+.o_form_view .sda-profile-transfer-btn {
+    background: #eef8f3;
+    border: 1px solid #bfe3d4;
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #11522c;
+    font-weight: 700;
+    cursor: pointer;
+}
+.o_form_view .sda-profile-meta-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+}
+.o_form_view .sda-profile-meta-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+/* ── Batch History banner ──────────────────────────────────────────── */
+.o_form_view .sda-batch-history-banner {
+    background: linear-gradient(135deg, #033b2c, #11522c);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.o_form_view .sda-batch-history-kicker {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.o_form_view .sda-batch-history-value {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 800;
+    margin: 4px 0;
+}
+.o_form_view .sda-batch-history-sub {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 12px;
+}
+.o_form_view .sda-batch-history-count-box {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 8px 16px;
+    text-align: center;
+}
+.o_form_view .sda-batch-history-count-label {
+    color: #bfe3d4;
+    font-size: 10px;
+    font-weight: 700;
+}
+.o_form_view .sda-batch-history-count-value {
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 800;
+}

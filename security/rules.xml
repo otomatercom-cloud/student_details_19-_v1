@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Course Coordinator Rules -->
+    <record id="rule_course_master_course_coordinator" model="ir.rule">
+        <field name="name">Course Coordinator: Assigned Courses</field>
+        <field name="model_id" ref="model_course_master"/>
+        <field name="domain_force">[('coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_course_coordinator'))]"/>
+    </record>
+    <record id="rule_student_batch_course_coordinator" model="ir.rule">
+        <field name="name">Course Coordinator: Batches in Assigned Courses</field>
+        <field name="model_id" ref="model_student_batch"/>
+        <field name="domain_force">[('course_ids.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_course_coordinator'))]"/>
+    </record>
+    <record id="rule_student_details_course_coordinator" model="ir.rule">
+        <field name="name">Course Coordinator: Students in Assigned Courses/Batches</field>
+        <field name="model_id" ref="model_student_details"/>
+        <field name="domain_force">['|', ('course_ids.coordinator_ids', 'in', user.id), ('batch_id.course_ids.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_course_coordinator'))]"/>
+    </record>
+    <record id="rule_st_attendance_course_coordinator" model="ir.rule">
+        <field name="name">Course Coordinator: Attendance for Assigned Courses</field>
+        <field name="model_id" ref="model_st_attendance"/>
+        <field name="domain_force">[('batch_id.course_ids.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_course_coordinator'))]"/>
+    </record>
+
+    <!-- Academic Coordinator Rules -->
+    <record id="rule_student_batch_academic_coordinator" model="ir.rule">
+        <field name="name">Academic Coordinator: Assigned Batches</field>
+        <field name="model_id" ref="model_student_batch"/>
+        <field name="domain_force">[('coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_academic_coordinator'))]"/>
+    </record>
+    <record id="rule_student_details_academic_coordinator" model="ir.rule">
+        <field name="name">Academic Coordinator: Students in Assigned Batches</field>
+        <field name="model_id" ref="model_student_details"/>
+        <field name="domain_force">[('batch_id.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_academic_coordinator'))]"/>
+    </record>
+    <record id="rule_st_attendance_academic_coordinator" model="ir.rule">
+        <field name="name">Academic Coordinator: Attendance for Assigned Batches</field>
+        <field name="model_id" ref="model_st_attendance"/>
+        <field name="domain_force">[('batch_id.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_academic_coordinator'))]"/>
+    </record>
+
+    <!-- Admission Officer Rules -->
+    <record id="rule_student_details_admission_officer" model="ir.rule">
+        <field name="name">Admission Officer: Own Students</field>
+        <field name="model_id" ref="model_student_details"/>
+        <field name="domain_force">[('admission_officer_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_admission_officer'))]"/>
+    </record>
+    <record id="rule_student_batch_admission_officer" model="ir.rule">
+        <field name="name">Admission Officer: Active Batches</field>
+        <field name="model_id" ref="model_student_batch"/>
+        <field name="domain_force">[('active', '=', True)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_admission_officer'))]"/>
+    </record>
+
+</odoo>

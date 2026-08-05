@@ -1,0 +1,25 @@
+/* Student Portal - Custom checkbox style */
+.policy-check {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #0d6efd;
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+}
+.policy-check:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+.policy-check:checked::after {
+    content: '✔';
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    font-size: 14px;
+    color: white;
+}

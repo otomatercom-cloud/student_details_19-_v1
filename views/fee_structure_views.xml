@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ── Fee Structure List ─────────────────────────────────────────────── -->
+    <record id="view_fee_structure_list" model="ir.ui.view">
+        <field name="name">fee.structure.list</field>
+        <field name="model">fee.structure</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="fee_type" widget="badge"
+                       decoration-info="fee_type == 'lumpsum'"
+                       decoration-success="fee_type == 'installment'"
+                       decoration-warning="fee_type in ('monthly','quarterly')"/>
+                <field name="gst_rate" string="GST %"/>
+                <field name="amount_exclusive" string="Base (₹)"/>
+                <field name="tax_amount" string="GST (₹)"/>
+                <field name="amount_inclusive" string="Total (₹)"/>
+                <field name="installment_count" string="Inst."/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ── Fee Structure Form ─────────────────────────────────────────────── -->
+    <record id="view_fee_structure_form" model="ir.ui.view">
+        <field name="name">fee.structure.form</field>
+        <field name="model">fee.structure</field>
+        <field name="arch" type="xml">
+            <form string="Fee Structure">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_installments" type="object"
+                                class="oe_stat_button" icon="fa-list"
+                                invisible="fee_type != 'installment'">
+                            <field name="installment_count" widget="statinfo" string="Installments"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. CIAP 2025 – Installment Plan"/></h1>
+                    </div>
+
+                    <!-- ── Config Row ──────────────────────────────────────── -->
+                    <group>
+                        <group string="Fee Configuration">
+                            <field name="fee_type"/>
+                            <field name="gst_rate"/>
+                            <field name="amount_entry_mode" widget="radio"
+                                   invisible="fee_type == 'installment'"/>
+                            <field name="batch_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                        </group>
+
+                        <!-- Non-installment amount block -->
+                        <group string="Fee Amount" invisible="fee_type == 'installment'">
+                            <field name="amount_inclusive"
+                                   string="Enter Amount (Incl. GST) ₹"
+                                   invisible="amount_entry_mode != 'inclusive'"/>
+                            <field name="amount_exclusive"
+                                   string="Enter Amount (Excl. GST) ₹"
+                                   invisible="amount_entry_mode != 'exclusive'"/>
+                            <field name="amount_exclusive"
+                                   string="Base Amount ₹ (Auto)"
+                                   readonly="1"
+                                   invisible="amount_entry_mode != 'inclusive'"/>
+                            <field name="amount_inclusive"
+                                   string="Total Amount ₹ (Auto)"
+                                   readonly="1"
+                                   invisible="amount_entry_mode != 'exclusive'"/>
+                            <field name="tax_amount"  string="Total GST ₹" readonly="1"/>
+                            <field name="cgst_amount" string="CGST ₹" readonly="1"/>
+                            <field name="sgst_amount" string="SGST ₹" readonly="1"/>
+                        </group>
+
+                        <!-- Installment config block -->
+                        <group string="Installment Setup" invisible="fee_type != 'installment'">
+                            <field name="total_fee_amount" string="Total Fee Amount ₹ (Incl. GST)"
+                                   required="fee_type == 'installment'"/>
+                            <field name="num_installments" string="Number of Installments"/>
+                            <field name="first_due_date" string="First Due Date"/>
+                        </group>
+                    </group>
+
+                    <!-- ── Auto Split Button Bar ───────────────────────────── -->
+                    <div invisible="fee_type != 'installment'"
+                         style="display:flex;align-items:center;gap:10px;
+                                margin:8px 0 16px;padding:12px 16px;
+                                background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;">
+                        <span style="color:#0369a1;font-size:13px;font-weight:600;">
+                            ⚡ Auto-generate equal installments →
+                        </span>
+                        <button name="action_auto_split" type="object"
+                                string="Split Equally" class="btn-primary btn-sm"
+                                style="border-radius:8px;"/>
+                        <span style="color:#64748b;font-size:12px;margin-left:4px;">
+                            Splits ₹<field name="total_fee_amount" readonly="1" nolabel="1"/>
+                            into <field name="num_installments" readonly="1" nolabel="1"/>
+                            equal parts. Edit any term — last term auto-adjusts.
+                        </span>
+                        <button name="action_adjust_last" type="object"
+                                string="↻ Re-balance Last" class="btn-warning btn-sm"
+                                style="margin-left:auto;border-radius:8px;"
+                                invisible="installment_balance == 0"/>
+                    </div>
+
+                    <!-- ── Installment Lines ───────────────────────────────── -->
+                    <div invisible="fee_type != 'installment'">
+                        <field name="installment_ids">
+                            <list editable="bottom" decoration-danger="amount_inclusive == 0">
+                                <field name="sequence" widget="handle"/>
+                                <field name="name" placeholder="1st Installment"/>
+                                <field name="due_date"/>
+                                <field name="amount_inclusive" string="Amount (Incl. GST) ₹"
+                                       sum="Total (Incl. GST)"/>
+                                <field name="amount_exclusive" string="Base (Excl. GST) ₹"
+                                       readonly="1" sum="Total (Excl. GST)"/>
+                                <field name="tax_amount"  string="GST ₹"  readonly="1" sum="Total GST"/>
+                                <field name="cgst_amount" string="CGST ₹" readonly="1" optional="hide"/>
+                                <field name="sgst_amount" string="SGST ₹" readonly="1" optional="hide"/>
+                                <field name="remarks" optional="show"/>
+                            </list>
+                        </field>
+
+                        <!-- ── Installment Summary Footer ──────────────────── -->
+                        <div style="margin-top:12px;border-radius:12px;overflow:hidden;
+                                    border:1px solid #e2e8f0;">
+
+                            <!-- Row 1: numbers -->
+                            <div style="display:grid;grid-template-columns:repeat(4,1fr);
+                                        background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                                <div style="padding:10px 16px;border-right:1px solid #e2e8f0;">
+                                    <div style="font-size:11px;color:#94a3b8;font-weight:700;
+                                                text-transform:uppercase;letter-spacing:0.5px;">
+                                        Total Fee
+                                    </div>
+                                    <div style="font-size:17px;font-weight:800;color:#1e293b;margin-top:2px;">
+                                        ₹ <field name="total_fee_amount" readonly="1" nolabel="1"/>
+                                    </div>
+                                </div>
+                                <div style="padding:10px 16px;border-right:1px solid #e2e8f0;">
+                                    <div style="font-size:11px;color:#94a3b8;font-weight:700;
+                                                text-transform:uppercase;letter-spacing:0.5px;">
+                                        Allocated
+                                    </div>
+                                    <div style="font-size:17px;font-weight:800;color:#16a34a;margin-top:2px;">
+                                        ₹ <field name="installment_allocated" readonly="1" nolabel="1"/>
+                                    </div>
+                                </div>
+                                <div style="padding:10px 16px;border-right:1px solid #e2e8f0;">
+                                    <div style="font-size:11px;color:#94a3b8;font-weight:700;
+                                                text-transform:uppercase;letter-spacing:0.5px;">
+                                        Balance
+                                    </div>
+                                    <div style="font-size:17px;font-weight:800;margin-top:2px;"
+                                         decoration-danger="installment_balance != 0"
+                                         decoration-success="installment_balance == 0">
+                                        ₹ <field name="installment_balance" readonly="1" nolabel="1"/>
+                                    </div>
+                                </div>
+                                <div style="padding:10px 16px;">
+                                    <div style="font-size:11px;color:#94a3b8;font-weight:700;
+                                                text-transform:uppercase;letter-spacing:0.5px;">
+                                        Installments
+                                    </div>
+                                    <div style="font-size:17px;font-weight:800;color:#2563eb;margin-top:2px;">
+                                        <field name="installment_count" readonly="1" nolabel="1"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: status indicator -->
+                            <div invisible="installment_balance == 0"
+                                 style="padding:8px 16px;background:#fef2f2;
+                                        display:flex;align-items:center;gap:8px;">
+                                <span style="color:#dc2626;font-size:13px;font-weight:700;">
+                                    ⚠️ Balance not zero — click "↻ Re-balance Last" to fix
+                                </span>
+                            </div>
+                            <div invisible="installment_balance != 0"
+                                 style="padding:8px 16px;background:#f0fdf4;
+                                        display:flex;align-items:center;gap:8px;">
+                                <span style="color:#16a34a;font-size:13px;font-weight:700;">
+                                    ✅ All installments balanced — Total ₹
+                                    <field name="total_fee_amount" readonly="1" nolabel="1"/>
+                                    (Incl. GST)
+                                </span>
+                            </div>
+
+                        </div>
+                        <!-- Hidden fields needed for invisible conditions -->
+                        <field name="installment_allocated" invisible="1"/>
+                        <field name="installment_balance" invisible="1"/>
+                    </div>
+
+                    <!-- ── Tabs ────────────────────────────────────────────── -->
+                    <notebook>
+                        <page string="Mapped Batches" name="batches">
+                            <field name="batch_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="start_date"/>
+                                    <field name="end_date"/>
+                                    <field name="student_count" string="Students"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="description"
+                                   placeholder="Additional notes about this fee structure..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Inherit Batch Form: Fee Structures tab ─────────────────────────── -->
+    <record id="view_student_batch_fee_inherit" model="ir.ui.view">
+        <field name="name">student.batch.form.fee.inherit</field>
+        <field name="model">student.batch</field>
+        <field name="inherit_id" ref="student_details_19.view_student_batch_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Fee Structures" name="fee_structures">
+                    <field name="fee_structure_ids">
+                        <list>
+                            <field name="name"/>
+                            <field name="fee_type" widget="badge"/>
+                            <field name="gst_rate" string="GST %"/>
+                            <field name="amount_exclusive" string="Base (₹)"/>
+                            <field name="tax_amount" string="GST (₹)"/>
+                            <field name="amount_inclusive" string="Total (₹)"/>
+                            <field name="installment_count" string="Inst."/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ── Actions ────────────────────────────────────────────────────────── -->
+    <record id="action_fee_structure" model="ir.actions.act_window">
+        <field name="name">Fee Structures</field>
+        <field name="res_model">fee.structure</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_fee_structure_lumpsum" model="ir.actions.act_window">
+        <field name="name">Lump Sum Fees</field>
+        <field name="res_model">fee.structure</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('fee_type','=','lumpsum')]</field>
+        <field name="context">{'default_fee_type': 'lumpsum'}</field>
+    </record>
+    <record id="action_fee_structure_installment" model="ir.actions.act_window">
+        <field name="name">Installment Plans</field>
+        <field name="res_model">fee.structure</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('fee_type','=','installment')]</field>
+        <field name="context">{'default_fee_type': 'installment'}</field>
+    </record>
+
+    <!-- ── Menus ───────────────────────────────────────────────────────────── -->
+    <menuitem id="menu_fee_root" name="Fee Structures"
+              parent="student_details_19.menu_student_root" sequence="20"/>
+    <menuitem id="menu_fee_all" name="All Fee Structures"
+              parent="menu_fee_root" action="action_fee_structure" sequence="1"/>
+    <menuitem id="menu_fee_lumpsum" name="Lump Sum"
+              parent="menu_fee_root" action="action_fee_structure_lumpsum" sequence="2"/>
+    <menuitem id="menu_fee_installment" name="Installment Plans"
+              parent="menu_fee_root" action="action_fee_structure_installment" sequence="3"/>
+
+</odoo>

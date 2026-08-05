@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ── Transfer Wizard Form ──────────────────────────────────────────── -->
+    <record id="view_batch_transfer_wizard_form" model="ir.ui.view">
+        <field name="name">batch.transfer.wizard.form</field>
+        <field name="model">batch.transfer.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Batch Transfer">
+                <sheet>
+
+                    <!-- Student banner -->
+                    <div style="background:linear-gradient(135deg,#1e3a8a,#3b82f6);
+                                border-radius:14px;padding:14px 18px;margin-bottom:18px;
+                                display:flex;align-items:center;gap:14px;">
+                        <field name="student_photo" widget="image" nolabel="1"
+                               style="width:54px;height:54px;border-radius:50%;
+                                      object-fit:cover;border:3px solid rgba(255,255,255,0.35);
+                                      flex-shrink:0;"/>
+                        <div style="flex:1;">
+                            <div style="color:rgba(255,255,255,0.65);font-size:10px;
+                                        font-weight:700;letter-spacing:1px;
+                                        text-transform:uppercase;">Transferring Student</div>
+                            <div style="color:#fff;font-size:17px;font-weight:800;margin:2px 0;">
+                                <field name="student_id" readonly="1" nolabel="1"/>
+                            </div>
+                            <div style="color:rgba(255,255,255,0.75);font-size:12px;">
+                                Roll: <field name="student_roll_no" readonly="1" nolabel="1"/>
+                                &amp;nbsp;·&amp;nbsp;
+                                <field name="student_phone" readonly="1" nolabel="1"/>
+                            </div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.15);border-radius:8px;
+                                    padding:6px 14px;text-align:center;flex-shrink:0;">
+                            <div style="color:#bfdbfe;font-size:10px;font-weight:700;">
+                                PREV. TRANSFERS</div>
+                            <div style="color:#fff;font-size:20px;font-weight:800;">
+                                <field name="transfer_count" readonly="1" nolabel="1"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FROM → TO cards -->
+                    <div style="display:grid;grid-template-columns:1fr 48px 1fr;
+                                gap:0;align-items:center;margin-bottom:18px;">
+
+                        <div style="background:#fef2f2;border:2px solid #fca5a5;
+                                    border-radius:12px;padding:14px 16px;">
+                            <div style="font-size:10px;font-weight:700;color:#dc2626;
+                                        text-transform:uppercase;letter-spacing:1px;
+                                        margin-bottom:6px;">📤 FROM BATCH</div>
+                            <div style="font-size:16px;font-weight:800;color:#7f1d1d;">
+                                <field name="from_batch_id" readonly="1" nolabel="1"/>
+                            </div>
+                            <div style="font-size:11px;color:#dc2626;margin-top:4px;">
+                                👥 <field name="from_batch_student_count" readonly="1" nolabel="1"/>
+                                students
+                            </div>
+                            <div invisible="not current_join_date"
+                                 style="font-size:11px;color:#b91c1c;margin-top:3px;">
+                                📅 Joined:
+                                <field name="current_join_date" readonly="1" nolabel="1"/>
+                            </div>
+                        </div>
+
+                        <div style="text-align:center;padding:0 4px;">
+                            <div style="font-size:22px;">➡️</div>
+                        </div>
+
+                        <div style="background:#f0fdf4;border:2px solid #86efac;
+                                    border-radius:12px;padding:14px 16px;">
+                            <div style="font-size:10px;font-weight:700;color:#16a34a;
+                                        text-transform:uppercase;letter-spacing:1px;
+                                        margin-bottom:6px;">📥 TO BATCH</div>
+                            <field name="to_batch_id" nolabel="1"
+                                   options="{'no_create': True}"
+                                   style="font-size:15px;font-weight:700;"/>
+                            <div invisible="not to_batch_id"
+                                 style="font-size:11px;color:#16a34a;margin-top:4px;">
+                                👥 <field name="to_batch_student_count" readonly="1" nolabel="1"/>
+                                students currently
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <group string="Transfer Details">
+                        <field name="transfer_date"/>
+                        <field name="reason"
+                               placeholder="e.g. Schedule conflict, Branch change..."/>
+                        <field name="notes" placeholder="Additional notes (optional)"/>
+                    </group>
+
+                    <field name="current_join_date" invisible="1"/>
+                    <field name="to_batch_id" invisible="1"/>
+                    <field name="to_batch_student_count" invisible="1"/>
+                </sheet>
+                <footer>
+                    <button name="action_confirm_transfer" type="object"
+                            string="✅ Confirm Transfer" class="btn-primary"
+                            confirm="Transfer this student? This will update their batch and record the history."/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Transfer History List + Form ──────────────────────────────────── -->
+    <record id="view_batch_transfer_history_list" model="ir.ui.view">
+        <field name="name">batch.transfer.history.list</field>
+        <field name="model">batch.transfer.history</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="student_id"/>
+                <field name="from_batch_id" string="From"/>
+                <field name="join_date" string="Joined From-Batch"/>
+                <field name="to_batch_id" string="To"/>
+                <field name="transfer_date" string="Transfer Date"/>
+                <field name="transferred_by" string="By"/>
+                <field name="reason"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_batch_transfer_history_form" model="ir.ui.view">
+        <field name="name">batch.transfer.history.form</field>
+        <field name="model">batch.transfer.history</field>
+        <field name="arch" type="xml">
+            <form create="false" string="Transfer Record">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id" readonly="1"/>
+                            <field name="from_batch_id" readonly="1"/>
+                            <field name="to_batch_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="join_date" readonly="1"/>
+                            <field name="transfer_date" readonly="1"/>
+                            <field name="transferred_by" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Reason / Notes">
+                        <field name="reason" nolabel="1" readonly="1"/>
+                        <field name="notes" nolabel="1" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Action + Menu ─────────────────────────────────────────────────── -->
+    <record id="action_batch_transfer_history" model="ir.actions.act_window">
+        <field name="name">Batch Transfer History</field>
+        <field name="res_model">batch.transfer.history</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_batch_transfer_history" name="Transfer History"
+              parent="student_details_19.menu_student_root"
+              action="action_batch_transfer_history" sequence="16"
+              groups="student_details_19.group_student_manager,student_details_19.group_tl_admission"/>
+
+</odoo>

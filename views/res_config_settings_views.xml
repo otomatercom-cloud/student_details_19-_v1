@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_student_registration_config_form" model="ir.ui.view">
+        <field name="name">student.registration.config.form</field>
+        <field name="model">res.config.settings</field>
+        <field name="arch" type="xml">
+            <form string="Student Registration Settings">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Student Registration Number</h1>
+                        <p class="text-muted">
+                            Format: PREFIX / Financial Year / Serial (e.g. ANJ/2026/01).
+                            Financial year runs April to March. Serial continues when the year changes.
+                        </p>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_registration_prefix"
+                                   placeholder="ANJ"/>
+                        </group>
+                        <group>
+                            <field name="student_registration_next_number"/>
+                        </group>
+                    </group>
+                    <div class="oe_title" style="margin-top:24px;">
+                        <h1>Moodle &amp; Portal Access</h1>
+                        <p class="text-muted">
+                            Used by the "Create Portal Users / Sync to Moodle" action on students.
+                        </p>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="moodle_base_url" placeholder="https://moodle.example.org"/>
+                            <field name="moodle_ws_token" password="True"/>
+                            <button name="action_test_moodle_connection" type="object"
+                                    string="🔌 Test Moodle Connection" class="btn-secondary"/>
+                        </group>
+                        <group>
+                            <field name="portal_default_password" password="True"/>
+                            <field name="moodle_fallback_email_domain"/>
+                            <field name="moodle_student_role_id"/>
+                        </group>
+                    </group>
+                    <div class="oe_title" style="margin-top:24px;">
+                        <h1>Razorpay Payment Links</h1>
+                        <p class="text-muted">
+                            Used by "Generate Payment Link" on enrollments/payments.
+                            Webhook URL to configure in the Razorpay Dashboard:
+                            &lt;your-odoo-url&gt;/razorpay/webhook — subscribe it to
+                            payment_link.paid and payment_link.partially_paid.
+                        </p>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="razorpay_key_id"/>
+                            <field name="razorpay_key_secret" password="True"/>
+                        </group>
+                        <group>
+                            <field name="razorpay_webhook_secret" password="True"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Save" name="execute" type="object" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_student_registration_settings" model="ir.actions.act_window">
+        <field name="name">Registration Number Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="view_student_registration_config_form"/>
+    </record>
+
+    <menuitem id="menu_student_registration_settings"
+              name="Registration Settings"
+              parent="menu_student_root"
+              action="action_student_registration_settings"
+              sequence="90"
+              groups="student_details_19.group_student_manager"/>
+</odoo>

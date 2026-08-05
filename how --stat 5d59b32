@@ -1,0 +1,114 @@
+[1mdiff --git a/controllers/__init__.py b/controllers/__init__.py[m
+[1mindex 026aa5a..5ece4ae 100644[m
+[1m--- a/controllers/__init__.py[m
+[1m+++ b/controllers/__init__.py[m
+[36m@@ -1,3 +1,2 @@[m
+ from . import portal[m
+ from . import controllers[m
+[31m-from . import razorpay_webhook[m
+[1mdiff --git a/models/__init__.py b/models/__init__.py[m
+[1mindex 95d47af..380d92f 100644[m
+[1m--- a/models/__init__.py[m
+[1m+++ b/models/__init__.py[m
+[36m@@ -3,6 +3,5 @@[m [mfrom . import student[m
+ from . import student_attendance1[m
+ from . import fee_structure[m
+ from . import enrollment[m
+[31m-from . import razorpay_payment[m
+ from . import batch_transfer[m
+ from . import moodle_portal_sync[m
+[1mdiff --git a/views/enrollment_views.xml b/views/enrollment_views.xml[m
+[1mindex de8dbaf..67cb8a8 100644[m
+[1m--- a/views/enrollment_views.xml[m
+[1m+++ b/views/enrollment_views.xml[m
+[36m@@ -187,9 +187,6 @@[m
+                     <button name="action_add_payment" type="object"[m
+                             string="💰 Add Payment" class="btn-primary"[m
+                             invisible="payment_status == 'paid'"/>[m
+[31m-                    <button name="action_generate_payment_link" type="object"[m
+[31m-                            string="🔗 Generate Payment Link" class="btn-secondary"[m
+[31m-                            invisible="payment_status == 'paid'"/>[m
+                     <field name="status" widget="statusbar"[m
+                            statusbar_visible="enrolled,completed,dropped"/>[m
+                 </header>[m
+[36m@@ -219,13 +216,6 @@[m
+                             <field name="payment_date"/>[m
+                             <field name="amount" string="Amount ₹"/>[m
+                             <field name="payment_mode"/>[m
+[31m-                            <field name="payment_source" widget="badge" optional="show"/>[m
+[31m-                            <field name="razorpay_status" widget="badge" optional="show"[m
+[31m-                                   decoration-success="razorpay_status == 'paid'"[m
+[31m-                                   decoration-warning="razorpay_status == 'partial'"[m
+[31m-                                   decoration-danger="razorpay_status in ('cancelled', 'expired')"/>[m
+[31m-                            <field name="amount_received" string="Received ₹" optional="show"/>[m
+[31m-                            <field name="razorpay_short_url" string="Link" optional="hide" widget="CopyClipboardChar"/>[m
+                             <field name="receipt_no"/>[m
+                             <field name="remarks"/>[m
+                         </list>[m
+[36m@@ -244,36 +234,10 @@[m
+                 <sheet>[m
+                     <group>[m
+                         <field name="enrollment_id" readonly="1"/>[m
+[31m-                        <field name="payment_source"/>[m
+                         <field name="payment_date"/>[m
+[31m-                        <field name="amount" string="Amount ₹"/>[m
+[31m-                    </group>[m
+[31m-                    <group invisible="payment_source != 'manual'">[m
+[32m+[m[32m                        <field name="amount" string="Amount Paid ₹"/>[m
+                         <field name="payment_mode"/>[m
+                         <field name="receipt_no"/>[m
+[31m-                    </group>[m
+[31m-                    <group string="Razorpay" invisible="payment_source != 'razorpay'">[m
+[31m-                        <field name="razorpay_allow_partial" invisible="razorpay_status"/>[m
+[31m-                        <field name="razorpay_status" widget="badge"[m
+[31m-                               decoration-success="razorpay_status == 'paid'"[m
+[31m-                               decoration-warning="razorpay_status == 'partial'"[m
+[31m-                               decoration-danger="razorpay_status in ('cancelled', 'expired')"[m
+[31m-                               readonly="1"/>[m
+[31m-                        <field name="razorpay_short_url" widget="CopyClipboardChar" readonly="1"[m
+[31m-                               invisible="not razorpay_short_url"/>[m
+[31m-                        <field name="amount_received" string="Received ₹" readonly="1"[m
+[31m-                               invisible="not razorpay_status"/>[m
+[31m-                        <button name="action_generate_razorpay_link" type="object"[m
+[31m-                                string="🔗 Generate Payment Link" class="btn-primary"[m
+[31m-                                invisible="razorpay_status in ('created', 'partial', 'paid')"/>[m
+[31m-                        <button name="action_refresh_razorpay_status" type="object"[m
+[31m-                                string="↻ Refresh Status" class="btn-secondary"[m
+[31m-                                invisible="not razorpay_payment_link_id or razorpay_status == 'paid'"/>[m
+[31m-                        <button name="action_mark_paid_manually" type="object"[m
+[31m-                                string="✓ Mark as Paid (checked manually)" class="btn-secondary"[m
+[31m-                                invisible="not razorpay_status or razorpay_status in ('paid', 'cancelled', 'expired')"/>[m
+[31m-                    </group>[m
+[31m-                    <group>[m
+                         <field name="remarks"/>[m
+                     </group>[m
+                 </sheet>[m
+[1mdiff --git a/views/res_config_settings_views.xml b/views/res_config_settings_views.xml[m
+[1mindex 932d2b1..cd75911 100644[m
+[1m--- a/views/res_config_settings_views.xml[m
+[1m+++ b/views/res_config_settings_views.xml[m
+[36m@@ -38,24 +38,6 @@[m
+                             <field name="moodle_fallback_email_domain"/>[m
+                         </group>[m
+                     </group>[m
+[31m-                    <div class="oe_title" style="margin-top:24px;">[m
+[31m-                        <h1>Razorpay Payment Links</h1>[m
+[31m-                        <p class="text-muted">[m
+[31m-                            Used by "Generate Payment Link" on enrollments/payments.[m
+[31m-                            Webhook URL to configure in the Razorpay Dashboard:[m
+[31m-                            &lt;your-odoo-url&gt;/razorpay/webhook — subscribe it to[m
+[31m-                            payment_link.paid and payment_link.partially_paid.[m
+[31m-                        </p>[m
+[31m-                    </div>[m
+[31m-                    <group>[m
+[31m-                        <group>[m
+[31m-                            <field name="razorpay_key_id"/>[m
+[31m-                            <field name="razorpay_key_secret" password="True"/>[m
+[31m-                        </group>[m
+[31m-                        <group>[m
+[31m-                            <field name="razorpay_webhook_secret" password="True"/>[m
+[31m-                        </group>[m
+[31m-                    </group>[m
+                 </sheet>[m
+                 <footer>[m
+                     <button string="Save" name="execute" type="object" class="btn-primary"/>[m

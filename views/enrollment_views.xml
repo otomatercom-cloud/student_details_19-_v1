@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ── Enrollment Wizard ─────────────────────────────────────────────── -->
+    <record id="view_enrollment_wizard_form" model="ir.ui.view">
+        <field name="name">enrollment.wizard.form</field>
+        <field name="model">enrollment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Enroll in Batch">
+                <sheet>
+                    <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);
+                                border-radius:12px;padding:16px 20px;margin-bottom:20px;
+                                display:flex;align-items:center;gap:12px;">
+                        <span style="font-size:28px;">🎓</span>
+                        <div>
+                            <div style="color:#bfdbfe;font-size:11px;font-weight:700;
+                                        text-transform:uppercase;letter-spacing:1px;">Enrolling Student</div>
+                            <div style="color:#fff;font-size:18px;font-weight:800;">
+                                <field name="student_id" readonly="1" nolabel="1"
+                                       style="color:#fff;font-weight:800;"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Select Batch -->
+                    <group string="Step 1 — Select Batch">
+                        <field name="batch_id" options="{'no_create': True}"/>
+                    </group>
+
+                    <!-- Available fee structures for this batch -->
+                    <div invisible="not batch_id"
+                         style="margin:8px 0 12px;">
+                        <div style="font-size:12px;color:#64748b;font-weight:700;
+                                    text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+                            Fee Structures in this Batch
+                        </div>
+                        <field name="available_fee_ids" nolabel="1">
+                            <list create="0" delete="0">
+                                <field name="name"/>
+                                <field name="fee_type" widget="badge"/>
+                                <field name="gst_rate" string="GST"/>
+                                <field name="amount_exclusive" string="Base ₹"/>
+                                <field name="tax_amount" string="GST ₹"/>
+                                <field name="amount_inclusive" string="Total ₹"/>
+                                <field name="installment_count" string="Inst."/>
+                            </list>
+                        </field>
+                    </div>
+
+                    <!-- Step 2: Select Fee Structure -->
+                    <group string="Step 2 — Select Fee Structure" invisible="not batch_id">
+                        <field name="fee_structure_id" options="{'no_create': True}"/>
+                    </group>
+
+                    <!-- Fee breakdown card -->
+                    <div invisible="not fee_structure_id"
+                         style="border:1px solid #e2e8f0;border-radius:12px;
+                                overflow:hidden;margin:12px 0;">
+
+                        <!-- Header -->
+                        <div style="background:#f8fafc;padding:10px 16px;
+                                    border-bottom:1px solid #e2e8f0;
+                                    display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <span style="font-size:13px;font-weight:700;color:#1e293b;">
+                                    📋 Fee Breakdown
+                                </span>
+                                <span style="margin-left:8px;background:#dbeafe;color:#1d4ed8;
+                                             border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">
+                                    <field name="fee_type_display" readonly="1" nolabel="1"/>
+                                </span>
+                                <span style="margin-left:6px;background:#f3e8ff;color:#7c3aed;
+                                             border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;">
+                                    GST <field name="gst_rate_display" readonly="1" nolabel="1"/>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Amount rows -->
+                        <div style="padding:14px 16px;">
+                            <table style="width:100%;border-collapse:collapse;">
+                                <tr>
+                                    <td style="padding:5px 0;color:#64748b;font-size:13px;">Course Fee (Excl. GST)</td>
+                                    <td style="text-align:right;font-weight:600;font-size:13px;color:#1e293b;">
+                                        ₹ <field name="base_fee_display" readonly="1" nolabel="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:5px 0;color:#64748b;font-size:13px;">GST Amount</td>
+                                    <td style="text-align:right;font-weight:600;font-size:13px;color:#1e293b;">
+                                        ₹ <field name="gst_display" readonly="1" nolabel="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:5px 0;color:#64748b;font-size:13px;">Course Fee (Incl. GST)</td>
+                                    <td style="text-align:right;font-weight:700;font-size:14px;color:#2563eb;">
+                                        ₹ <field name="total_fee_display" readonly="1" nolabel="1"/>
+                                    </td>
+                                </tr>
+                                <tr invisible="admission_fee_display == 0">
+                                    <td style="padding:5px 0;color:#64748b;font-size:13px;">+ Admission Fee</td>
+                                    <td style="text-align:right;font-weight:600;font-size:13px;color:#f59e0b;">
+                                        ₹ <field name="admission_fee_display" readonly="1" nolabel="1"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <div style="border-top:2px solid #e2e8f0;margin:8px 0;"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size:14px;font-weight:800;color:#1e293b;">
+                                        Grand Total (Payable)
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <span style="background:linear-gradient(135deg,#1e3a8a,#2563eb);
+                                                     color:#fff;padding:4px 14px;border-radius:8px;
+                                                     font-size:16px;font-weight:800;">
+                                            ₹ <field name="grand_total_display" readonly="1" nolabel="1"/>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Installment schedule -->
+                        <div invisible="not installment_summary"
+                             style="padding:0 16px 14px;">
+                            <div style="font-size:12px;color:#64748b;font-weight:700;
+                                        text-transform:uppercase;margin-bottom:6px;">
+                                📅 Installment Schedule
+                            </div>
+                            <field name="installment_summary" readonly="1" nolabel="1"
+                                   widget="text"
+                                   style="font-family:monospace;font-size:12px;
+                                          background:#f8fafc;border-radius:8px;
+                                          padding:10px;border:1px solid #e2e8f0;
+                                          white-space:pre;width:100%;"/>
+                        </div>
+                    </div>
+
+                    <!-- Hidden field for invisible condition -->
+                    <field name="admission_fee_display" invisible="1"/>
+                    <field name="installment_summary" invisible="1"/>
+                </sheet>
+                <footer>
+                    <button name="action_confirm_enrollment" type="object"
+                            string="✅ Confirm Enrollment" class="btn-primary"
+                            invisible="not fee_structure_id"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Enrollment List/Form ───────────────────────────────────────────── -->
+    <record id="view_student_enrollment_list" model="ir.ui.view">
+        <field name="name">student.enrollment.list</field>
+        <field name="model">student.enrollment</field>
+        <field name="arch" type="xml">
+            <list decoration-success="payment_status == 'paid'"
+                  decoration-warning="payment_status == 'partial'"
+                  decoration-danger="payment_status == 'unpaid'">
+                <field name="student_id"/>
+                <field name="batch_id"/>
+                <field name="fee_structure_id"/>
+                <field name="enrollment_date"/>
+                <field name="total_fee" string="Total ₹"/>
+                <field name="paid_amount" string="Paid ₹"/>
+                <field name="due_amount" string="Due ₹"/>
+                <field name="payment_status" widget="badge"
+                       decoration-success="payment_status == 'paid'"
+                       decoration-warning="payment_status == 'partial'"
+                       decoration-danger="payment_status == 'unpaid'"/>
+                <field name="next_due_date" string="Next Due"/>
+                <field name="status" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_student_enrollment_form" model="ir.ui.view">
+        <field name="name">student.enrollment.form</field>
+        <field name="model">student.enrollment</field>
+        <field name="arch" type="xml">
+            <form string="Enrollment">
+                <header>
+                    <button name="action_add_payment" type="object"
+                            string="💰 Add Payment" class="btn-primary"
+                            invisible="payment_status == 'paid'"/>
+                    <button name="action_generate_payment_link" type="object"
+                            string="🔗 Generate Payment Link" class="btn-secondary"
+                            invisible="payment_status == 'paid'"/>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="enrolled,completed,dropped"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <group>
+                        <group string="Enrollment Info">
+                            <field name="student_id" readonly="1"/>
+                            <field name="batch_id" readonly="1"/>
+                            <field name="fee_structure_id" readonly="1"/>
+                            <field name="enrollment_date"/>
+                        </group>
+                        <group string="Fee Summary">
+                            <field name="total_fee" readonly="1"/>
+                            <field name="paid_amount" readonly="1"/>
+                            <field name="due_amount" readonly="1"/>
+                            <field name="payment_status" widget="badge"
+                                   decoration-success="payment_status == 'paid'"
+                                   decoration-warning="payment_status == 'partial'"
+                                   decoration-danger="payment_status == 'unpaid'"
+                                   readonly="1"/>
+                            <field name="next_due_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="payment_ids">
+                        <list editable="bottom">
+                            <field name="payment_date"/>
+                            <field name="amount" string="Amount ₹"/>
+                            <field name="payment_mode"/>
+                            <field name="payment_source" widget="badge" optional="show"/>
+                            <field name="razorpay_status" widget="badge" optional="show"
+                                   decoration-success="razorpay_status == 'paid'"
+                                   decoration-warning="razorpay_status == 'partial'"
+                                   decoration-danger="razorpay_status in ('cancelled', 'expired')"/>
+                            <field name="amount_received" string="Received ₹" optional="show"/>
+                            <field name="razorpay_short_url" string="Link" optional="hide" widget="CopyClipboardChar"/>
+                            <field name="receipt_no"/>
+                            <field name="remarks"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Payment Quick Form ────────────────────────────────────────────── -->
+    <record id="view_fee_payment_form" model="ir.ui.view">
+        <field name="name">student.fee.payment.form</field>
+        <field name="model">student.fee.payment</field>
+        <field name="arch" type="xml">
+            <form string="Add Payment">
+                <sheet>
+                    <group>
+                        <field name="enrollment_id" readonly="1"/>
+                        <field name="payment_source"/>
+                        <field name="payment_date"/>
+                        <field name="amount" string="Amount ₹"/>
+                    </group>
+                    <group invisible="payment_source != 'manual'">
+                        <field name="payment_mode"/>
+                        <field name="receipt_no"/>
+                    </group>
+                    <group string="Razorpay" invisible="payment_source != 'razorpay'">
+                        <field name="razorpay_allow_partial" invisible="razorpay_status"/>
+                        <field name="razorpay_status" widget="badge"
+                               decoration-success="razorpay_status == 'paid'"
+                               decoration-warning="razorpay_status == 'partial'"
+                               decoration-danger="razorpay_status in ('cancelled', 'expired')"
+                               readonly="1"/>
+                        <field name="razorpay_short_url" widget="CopyClipboardChar" readonly="1"
+                               invisible="not razorpay_short_url"/>
+                        <field name="amount_received" string="Received ₹" readonly="1"
+                               invisible="not razorpay_status"/>
+                        <button name="action_generate_razorpay_link" type="object"
+                                string="🔗 Generate Payment Link" class="btn-primary"
+                                invisible="razorpay_status in ('created', 'partial', 'paid')"/>
+                        <button name="action_refresh_razorpay_status" type="object"
+                                string="↻ Refresh Status" class="btn-secondary"
+                                invisible="not razorpay_payment_link_id or razorpay_status == 'paid'"/>
+                        <button name="action_mark_paid_manually" type="object"
+                                string="✓ Mark as Paid (checked manually)" class="btn-secondary"
+                                invisible="not razorpay_status or razorpay_status in ('paid', 'cancelled', 'expired')"/>
+                    </group>
+                    <group>
+                        <field name="remarks"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Save Payment" type="object" name="write"
+                            special="save" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Inherit Student Form: Enroll button + Wallet card + Enrollments tab ── -->
+    <record id="view_student_form_enrollment_inherit" model="ir.ui.view">
+        <field name="name">student.details.form.enrollment</field>
+        <field name="model">student.details</field>
+        <field name="inherit_id" ref="student_details_19.view_student_form_v2"/>
+        <field name="arch" type="xml">
+
+            <!-- Add header with Enroll button -->
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button name="action_enroll_batch" type="object"
+                            string="🎓 Enroll in Batch" class="btn-primary"/>
+                </header>
+            </xpath>
+
+            <!-- Inject stat buttons into the oe_button_box (direct sheet child) -->
+            <xpath expr="//sheet/div[@name='button_box']" position="inside">
+                <button type="object" name="action_enroll_batch"
+                        class="oe_stat_button" icon="fa-graduation-cap"
+                        invisible="enrollment_count > 0">
+                    <span class="o_stat_text">Enroll</span>
+                </button>
+                <button type="object"
+                        class="oe_stat_button" icon="fa-university"
+                        invisible="enrollment_count == 0">
+                    <field name="enrollment_count" widget="statinfo" string="Enrollments"/>
+                </button>
+            </xpath>
+
+            <!-- Wallet card: inject after the oe_title div inside the info panel -->
+            <xpath expr="//div[@name='info_panel']/div[hasclass('oe_title')]" position="after">
+
+                <!-- Fee Wallet Card — only shown when enrolled -->
+                <div invisible="enrollment_count == 0"
+                     style="margin-top:14px;border-top:1px solid rgba(255,255,255,0.15);
+                            padding-top:12px;">
+
+                    <!-- Hidden fields for conditions -->
+                    <field name="wallet_status" invisible="1"/>
+                    <field name="wallet_total_fee" invisible="1"/>
+                    <field name="wallet_paid" invisible="1"/>
+                    <field name="wallet_due" invisible="1"/>
+                    <field name="wallet_next_due" invisible="1"/>
+                    <field name="enrollment_count" invisible="1"/>
+
+                    <!-- Green: Fully Paid -->
+                    <div invisible="wallet_status != 'clear'"
+                         style="background:#065f46;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+                        <div style="color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;
+                                    text-transform:uppercase;letter-spacing:1px;">💳 Fee Wallet</div>
+                        <div style="color:#fff;font-size:16px;font-weight:800;margin:4px 0 8px;">✅ Fully Paid</div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Total Fee</div>
+                                <div style="color:#fff;font-size:16px;font-weight:700;">₹ <field name="wallet_total_fee" readonly="1" nolabel="1"/></div>
+                            </div>
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Paid</div>
+                                <div style="color:#86efac;font-size:16px;font-weight:700;">₹ <field name="wallet_paid" readonly="1" nolabel="1"/></div>
+                            </div>
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Due</div>
+                                <div style="color:#fff;font-size:13px;font-weight:700;">₹ 0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orange: Partial Payment -->
+                    <div invisible="wallet_status != 'partial'"
+                         style="background:#92400e;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+                        <div style="color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;
+                                    text-transform:uppercase;letter-spacing:1px;">💳 Fee Wallet</div>
+                        <div style="color:#fff;font-size:16px;font-weight:800;margin:4px 0 8px;">⏳ Partial Payment</div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:16px;">Total Fee</div>
+                                <div style="color:#fff;font-size:12px;font-weight:700;">₹ <field name="wallet_total_fee" readonly="1" nolabel="1"/></div>
+                            </div>
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:16px;">Paid</div>
+                                <div style="color:#fef3c7;font-size:12px;font-weight:700;">₹ <field name="wallet_paid" readonly="1" nolabel="1"/></div>
+                            </div>
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Due ⚠️</div>
+                                <div style="color:#fef3c7;font-size:16px;font-weight:800;">₹ <field name="wallet_due" readonly="1" nolabel="1"/></div>
+                            </div>
+                        </div>
+                        <div invisible="not wallet_next_due"
+                             style="margin-top:8px;padding:5px 10px;background:rgba(0,0,0,0.2);
+                                    border-radius:8px;color:rgba(255,255,255,0.85);font-size:11px;">
+                            📅 Next Due: <field name="wallet_next_due" readonly="1" nolabel="1"/>
+                        </div>
+                    </div>
+
+                    <!-- Red: Unpaid -->
+                    <div invisible="wallet_status != 'due'"
+                         style="background:#7f1d1d;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+                        <div style="color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;
+                                    text-transform:uppercase;letter-spacing:1px;">💳 Fee Wallet</div>
+                        <div style="color:#fff;font-size:16px;font-weight:800;margin:4px 0 8px;">🔴 Fee Pending</div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Total Fee</div>
+                                <div style="color:#fff;font-size:16px;font-weight:700;">₹ <field name="wallet_total_fee" readonly="1" nolabel="1"/></div>
+                            </div>
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Paid</div>
+                                <div style="color:#fecaca;font-size:16px;font-weight:700;">₹ 0.00</div>
+                            </div>
+                            <div>
+                                <div style="color:rgba(255,255,255,0.6);font-size:12px;">Due 🚨</div>
+                                <div style="color:#fef2f2;font-size:16px;font-weight:800;">₹ <field name="wallet_due" readonly="1" nolabel="1"/></div>
+                            </div>
+                        </div>
+                        <div invisible="not wallet_next_due"
+                             style="margin-top:8px;padding:5px 10px;background:rgba(0,0,0,0.2);
+                                    border-radius:8px;color:rgba(255,255,255,0.85);font-size:11px;">
+                            📅 Next Due: <field name="wallet_next_due" readonly="1" nolabel="1"/>
+                        </div>
+                    </div>
+
+                </div>
+            </xpath>
+
+            <!-- Add Enrollments tab in notebook -->
+            <xpath expr="//sheet/notebook" position="inside">
+                <page string="Enrollments &amp; Fees" name="enrollments">
+                    <field name="enrollment_ids">
+                        <list decoration-success="payment_status == 'paid'"
+                              decoration-warning="payment_status == 'partial'"
+                              decoration-danger="payment_status == 'unpaid'">
+                            <field name="batch_id"/>
+                            <field name="fee_structure_id" string="Fee Plan"/>
+                            <field name="enrollment_date"/>
+                            <field name="total_fee" string="Total ₹"/>
+                            <field name="paid_amount" string="Paid ₹"/>
+                            <field name="due_amount" string="Due ₹"/>
+                            <field name="payment_status" widget="badge"
+                                   decoration-success="payment_status == 'paid'"
+                                   decoration-warning="payment_status == 'partial'"
+                                   decoration-danger="payment_status == 'unpaid'"/>
+                            <field name="next_due_date" string="Next Due"/>
+                            <field name="status" widget="badge"/>
+                            <button name="action_add_payment" type="object"
+                                    string="💰 Pay" class="btn-sm btn-success"
+                                    invisible="payment_status == 'paid'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+
+    <!-- ── Actions ────────────────────────────────────────────────────────── -->
+    <record id="action_student_enrollment" model="ir.actions.act_window">
+        <field name="name">Enrollments</field>
+        <field name="res_model">student.enrollment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ── Menu ───────────────────────────────────────────────────────────── -->
+    <menuitem id="menu_enrollment" name="Enrollments"
+              parent="student_details_19.menu_student_root"
+              action="action_student_enrollment" sequence="15"/>
+
+</odoo>

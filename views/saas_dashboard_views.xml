@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_student_saas_dashboard" model="ir.actions.client">
+        <field name="name">Overview Dashboard</field>
+        <field name="tag">student_details_19.saas_dashboard</field>
+    </record>
+
+    <menuitem id="menu_student_saas_dashboard" name="Overview Dashboard"
+              parent="menu_student_root" action="action_student_saas_dashboard"
+              sequence="0" groups="student_details_19.group_student_manager"/>
+</odoo>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+<t t-name="student_details_19.StudentSaasDashboard">
+<div class="o_ssd_dashboard">
+
+    <div class="o_ssd_header">
+        <div>
+            <div class="o_ssd_kicker">Students</div>
+            <h1>Overview Dashboard</h1>
+            <p>Batches, enrollment, and fee collection at a glance</p>
+        </div>
+        <button type="button" class="btn btn-light" t-on-click="loadData" t-att-disabled="state.loading">
+            <i t-attf-class="fa {{ state.loading ? 'fa-spinner fa-spin' : 'fa-refresh' }} me-1"/>Refresh
+        </button>
+    </div>
+
+    <div t-if="state.error" class="alert alert-danger mt-3" t-esc="state.error"/>
+
+    <t t-if="state.loading">
+        <div class="o_ssd_skeleton_cards">
+            <t t-foreach="[1,2,3,4,5,6]" t-as="n" t-key="n">
+                <div class="o_ssd_skeleton_card"/>
+            </t>
+        </div>
+    </t>
+
+    <t t-else="">
+        <!-- ── Top KPI cards ──────────────────────────────────────── -->
+        <div class="o_ssd_cards">
+            <div class="o_ssd_card o_ssd_card_students">
+                <div class="o_ssd_card_icon"><i class="fa fa-users"/></div>
+                <div class="o_ssd_card_value"><t t-esc="d.total_students"/></div>
+                <div class="o_ssd_card_label">Total Students</div>
+            </div>
+            <div class="o_ssd_card o_ssd_card_batches">
+                <div class="o_ssd_card_icon"><i class="fa fa-th-large"/></div>
+                <div class="o_ssd_card_value"><t t-esc="d.live_batches"/> / <t t-esc="d.total_batches"/></div>
+                <div class="o_ssd_card_label">Live Batches (of Total)</div>
+            </div>
+            <div class="o_ssd_card o_ssd_card_paid" style="cursor:pointer;" t-on-click="openFullyPaid">
+                <div class="o_ssd_card_icon"><i class="fa fa-check-circle"/></div>
+                <div class="o_ssd_card_value"><t t-esc="d.fully_paid_count"/></div>
+                <div class="o_ssd_card_label">Fully Paid Students</div>
+            </div>
+            <div class="o_ssd_card o_ssd_card_pending" style="cursor:pointer;" t-on-click="openPending">
+                <div class="o_ssd_card_icon"><i class="fa fa-exclamation-triangle"/></div>
+                <div class="o_ssd_card_value"><t t-esc="d.pending_payment_count"/></div>
+                <div class="o_ssd_card_label">Payment Pending</div>
+            </div>
+            <div class="o_ssd_card o_ssd_card_dropped" style="cursor:pointer;" t-on-click="openDropped">
+                <div class="o_ssd_card_icon"><i class="fa fa-user-times"/></div>
+                <div class="o_ssd_card_value"><t t-esc="d.dropped_count"/></div>
+                <div class="o_ssd_card_label">Dropped Students</div>
+            </div>
+            <div class="o_ssd_card o_ssd_card_collection">
+                <div class="o_ssd_card_icon"><i class="fa fa-money"/></div>
+                <div class="o_ssd_card_value">₹ <t t-esc="fmt(d.total_paid)"/></div>
+                <div class="o_ssd_card_label">Total Collected</div>
+            </div>
+        </div>
+
+        <!-- ── Outstanding note ───────────────────────────────────── -->
+        <div class="o_ssd_section">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>Outstanding Balance (all batches):</strong>
+                    ₹ <t t-esc="fmt(d.total_due)"/>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="openPending">
+                    View Pending Students →
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Per-batch table ─────────────────────────────────────── -->
+        <div class="o_ssd_section">
+            <h2>📚 By Batch</h2>
+            <table class="table table-sm o_ssd_batch_table">
+                <thead>
+                    <tr>
+                        <th>Batch</th>
+                        <th>Status</th>
+                        <th class="text-end">Students</th>
+                        <th class="text-end">Fully Paid</th>
+                        <th class="text-end">Pending</th>
+                        <th class="text-end">Dropped</th>
+                        <th class="text-end">Collected ₹</th>
+                        <th class="text-end">Due ₹</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-if="!(d.batches or []).length">
+                        <td colspan="8" class="text-center text-muted">No batches yet.</td>
+                    </tr>
+                    <tr t-foreach="d.batches or []" t-as="b" t-key="b.batch_id"
+                        style="cursor:pointer;" t-on-click="() => this.openBatch(b)">
+                        <td><strong t-esc="b.batch_name"/></td>
+                        <td>
+                            <span t-if="b.is_live" class="badge text-bg-success">Live</span>
+                            <span t-else="" class="badge text-bg-secondary">Not Live</span>
+                        </td>
+                        <td class="text-end"><t t-esc="b.student_count"/></td>
+                        <td class="text-end"><t t-esc="b.fully_paid_count"/></td>
+                        <td class="text-end">
+                            <span t-if="b.pending_count" class="text-warning fw-bold" t-esc="b.pending_count"/>
+                            <span t-else="">—</span>
+                        </td>
+                        <td class="text-end">
+                            <span t-if="b.dropped_count" class="text-danger fw-bold" t-esc="b.dropped_count"/>
+                            <span t-else="">—</span>
+                        </td>
+                        <td class="text-end" t-esc="fmt(b.paid_amount)"/>
+                        <td class="text-end" t-esc="fmt(b.due_amount)"/>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </t>
+</div>
+</t>
+</templates>

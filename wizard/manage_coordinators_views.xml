@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_manage_coordinators_form" model="ir.ui.view">
+        <field name="name">manage.coordinators.form</field>
+        <field name="model">manage.coordinators</field>
+        <field name="arch" type="xml">
+            <form string="Manage Coordinators">
+                <group>
+                    <field name="coordinator_type" readonly="1"/>
+                    <field name="user_ids" widget="many2many_tags"
+                           options="{'no_create': True}"/>
+                </group>
+                <footer>
+                    <button string="Save" type="object" name="action_save" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_manage_academic_coordinators" model="ir.actions.act_window">
+        <field name="name">Academic Coordinators</field>
+        <field name="res_model">manage.coordinators</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_coordinator_type': 'academic'}</field>
+    </record>
+
+    <record id="action_manage_course_coordinators" model="ir.actions.act_window">
+        <field name="name">Course Coordinators</field>
+        <field name="res_model">manage.coordinators</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_coordinator_type': 'course'}</field>
+    </record>
+
+    <record id="action_manage_tl_admission" model="ir.actions.act_window">
+        <field name="name">TL Admission</field>
+        <field name="res_model">manage.coordinators</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_coordinator_type': 'tl'}</field>
+    </record>
+
+    <record id="action_manage_admission_officer" model="ir.actions.act_window">
+        <field name="name">Admission Officers</field>
+        <field name="res_model">manage.coordinators</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_coordinator_type': 'admission'}</field>
+    </record>
+
+    <menuitem id="menu_student_configuration_root" name="Configuration"
+              parent="student_details_19.menu_student_root" sequence="100"
+              groups="student_details_19.group_student_manager"/>
+    <menuitem id="menu_student_academic_coordinator" name="Academic Coordinators"
+              parent="menu_student_configuration_root"
+              action="action_manage_academic_coordinators" sequence="10"/>
+    <menuitem id="menu_student_course_coordinator" name="Course Coordinators"
+              parent="menu_student_configuration_root"
+              action="action_manage_course_coordinators" sequence="20"/>
+    <menuitem id="menu_student_tl_admission" name="TL Admission"
+              parent="menu_student_configuration_root"
+              action="action_manage_tl_admission" sequence="30"/>
+    <menuitem id="menu_student_admission_officer" name="Admission Officers"
+              parent="menu_student_configuration_root"
+              action="action_manage_admission_officer" sequence="40"/>
+
+</odoo>

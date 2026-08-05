@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ======================== POLICY PAGE ======================== -->
+    <template id="portal_student_policy" name="Policy Agreement">
+        <t t-call="website.layout">
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card shadow border-0 rounded-lg">
+                            <div class="card-header bg-white border-bottom-0 pt-4 pb-0 text-center">
+                                <h2 class="text-success fw-bold mb-0">Eligibility Criteria</h2>
+                                <p class="text-muted small mt-2">Please review the requirements before proceeding.</p>
+                            </div>
+                            <div class="card-body p-5">
+                                <div class="alert alert-light border-start border-4 border-success mb-4 p-4 rounded bg-light-subtle">
+                                    <ul class="list-unstyled mb-0 text-dark">
+                                        <li class="mb-3 d-flex align-items-start">
+                                            <i class="fa fa-check-circle text-success mt-1 me-3"></i>
+                                            <span>Good communication skills in <strong>English</strong>.
+                                            </span>
+                                        </li>
+                                        <li class="mb-3 d-flex align-items-start">
+                                            <i class="fa fa-university text-success mt-1 me-3"></i>
+                                            <span>Must be a <strong>Commerce Graduate</strong> with minimum 50%.
+                                            </span>
+                                        </li>
+                                        <li class="mb-3 d-flex align-items-start">
+                                            <i class="fa fa-user-clock text-success mt-1 me-3"></i>
+                                            <span>Age between <strong>21 and 40 years</strong>.
+                                            </span>
+                                        </li>
+                                        <li class="d-flex align-items-start">
+                                            <i class="fa fa-clipboard-check text-success mt-1 me-3"></i>
+                                            <span>Admission confirmed only after <strong>screening &amp;
+                                                selection</strong>.
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <form method="get" action="/my/students/details">
+                                    <div class="form-check p-3 border rounded mb-4 bg-white shadow-sm hover-shadow transition position-relative">
+                                        <input type="checkbox" class="form-check-input" id="policyCheck"
+                                               required="required" style="transform: scale(1.2); margin-top: 0.25rem;"/>
+                                        <label class="form-check-label ms-3 text-secondary stretched-link"
+                                               for="policyCheck">
+                                            I have read and accept the <a href="/terms" target="_blank"
+                                                                          class="text-decoration-none fw-bold text-success position-relative"
+                                                                          style="z-index: 2;">terms and policy</a>.
+                                        </label>
+                                    </div>
+                                    <button type="submit"
+                                            class="btn btn-success w-100 py-3 fw-bold shadow-sm text-uppercase letter-spacing-1">
+                                        Proceed to Form
+                                        <i class="fa fa-arrow-right ms-2"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ======================== STUDENT FORM PAGE ======================== -->
+    <template id="portal_student_form" name="New Student Form">
+        <t t-call="website.layout">
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="card shadow-lg border-0 rounded-lg overflow-hidden">
+                            <div class="card-header bg-success text-white text-center py-4">
+                                <h2 class="fw-bold mb-0">Student Registration</h2>
+                                <p class="mb-0 opacity-75">Please fill in your details accurately</p>
+                            </div>
+                            <div class="card-body p-5 bg-light">
+                                <form id="student_form" method="post" action="/my/students/details/review"
+                                      enctype="multipart/form-data">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                    <!-- Personal Details -->
+                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
+                                        <h5 class="text-success border-bottom pb-2 mb-4">
+                                            <i class="fa fa-user me-2"/>
+                                            Personal Details
+                                        </h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="name" id="name" class="form-control"
+                                                           placeholder="Full Name" required="true"/>
+                                                    <label for="name">Full Name</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="date" name="date_of_birth" id="dob"
+                                                           class="form-control" placeholder="Date of Birth"
+                                                           required="true"/>
+                                                    <label for="dob">Date of Birth</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <select name="gender" id="gender" class="form-select">
+                                                        <option value="female">Female</option>
+                                                        <option value="male">Male</option>
+                                                        <option value="other">Other</option>
+                                                    </select>
+                                                    <label for="gender">Gender</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="form-floating mb-3">
+                                                    <select name="branch" id="branch" class="form-select"
+                                                            required="true">
+                                                        <option value="" disabled="disabled" selected="selected">Select
+                                                            Branch
+                                                        </option>
+                                                        <option value="kochi">Kochi</option>
+                                                        <option value="calicut">Calicut</option>
+                                                        <option value="kottayam">Kottayam</option>
+                                                        <option value="trivandrum">Trivandrum</option>
+                                                        <option value="malappuram">Malappuram</option>
+                                                        <option value="kozhikode">Kozhikode</option>
+                                                        <option value="online">Online</option>
+                                                    </select>
+                                                    <label for="branch">Branch</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="form-floating mb-3">
+                                                    <select name="joining_status" id="joining_status"
+                                                            class="form-select" required="true"
+                                                            onchange="toggleAdmissionOfficer()">
+                                                        <option value="new">New Student</option>
+                                                        <option value="existing">Existing Student</option>
+                                                    </select>
+                                                    <label for="joining_status">Joining Status</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12" id="admission_officer_div" style="display: none;">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="admission_officer_text"
+                                                           id="admission_officer_text" class="form-control"
+                                                           placeholder="Admission Officer Name"/>
+                                                    <label for="admission_officer_text">Admission Officer Name</label>
+                                                </div>
+                                            </div>
+                                            <script>
+                                                function toggleAdmissionOfficer() {
+                                                var status = document.getElementById("joining_status").value;
+                                                var officerDiv = document.getElementById("admission_officer_div");
+                                                if (status === 'new') {
+                                                officerDiv.style.display = 'block';
+                                                } else {
+                                                officerDiv.style.display = 'none';
+                                                document.getElementById("admission_officer_text").value = '';
+                                                }
+                                                }
+                                                // Run on load
+                                                window.addEventListener('DOMContentLoaded', (event) => {
+                                                toggleAdmissionOfficer();
+                                                });
+                                            </script>
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label for="photo" class="form-label text-muted small fw-bold ms-1">
+                                                        Upload Passport Size Photo
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="file" name="photo" id="photo" accept="image/*"
+                                                           class="form-control form-control-lg" required="true"/>
+                                                    <div class="form-text ms-1">Recommended size: 413 × 531 px</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Contact Details -->
+                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
+                                        <h5 class="text-success border-bottom pb-2 mb-4"><i
+                                                class="fa fa-address-card me-2"/>Contact Details
+                                        </h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="email" name="email" id="email" class="form-control"
+                                                           placeholder="name@example.com" required="true"/>
+                                                    <label for="email">Email Address</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="tel" name="phone" id="phone" class="form-control"
+                                                           placeholder="Phone Number" required="true"/>
+                                                    <label for="phone">Phone Number</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <select name="district" id="district" class="form-select"
+                                                            required="true">
+                                                        <option value="" disabled="disabled" selected="selected">Select
+                                                            District
+                                                        </option>
+                                                        <option value="Alappuzha">Alappuzha</option>
+                                                        <option value="Ernakulam">Ernakulam</option>
+                                                        <option value="Idukki">Idukki</option>
+                                                        <option value="Kannur">Kannur</option>
+                                                        <option value="Kasaragod">Kasaragod</option>
+                                                        <option value="Kollam">Kollam</option>
+                                                        <option value="Kottayam">Kottayam</option>
+                                                        <option value="Kozhikode">Kozhikode</option>
+                                                        <option value="Malappuram">Malappuram</option>
+                                                        <option value="Palakkad">Palakkad</option>
+                                                        <option value="Pathanamthitta">Pathanamthitta</option>
+                                                        <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                                                        <option value="Thrissur">Thrissur</option>
+                                                        <option value="Wayanad">Wayanad</option>
+                                                    </select>
+                                                    <label for="district">District</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="city" id="city" class="form-control"
+                                                           placeholder="City"/>
+                                                    <label for="city">City</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Academic Details -->
+                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
+                                        <h5 class="text-success border-bottom pb-2 mb-4"><i
+                                                class="fa fa-graduation-cap me-2"/>Academic Details
+                                        </h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="qualification" id="qualification"
+                                                           class="form-control" placeholder="Highest Qualification"
+                                                           required="true"/>
+                                                    <label for="qualification">Highest Qualification</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="school" id="school" class="form-control"
+                                                           placeholder="Previous School Name" required="true"/>
+                                                    <label for="school">Previous School Name</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="college" id="college" class="form-control"
+                                                           placeholder="Previous College Name" required="true"/>
+                                                    <label for="college">Previous College Name</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-12" id="course_section">
+                                                <label class="form-label text-muted small fw-bold ms-1 mb-2">
+                                                    Select Courses of Interest
+                                                    <span class="text-danger">*</span>
+                                                </label>
+
+                                                <div class="row g-2">
+                                                    <t t-foreach="courses" t-as="course">
+                                                        <div class="col-md-6">
+                                                            <div class="form-check p-3 border rounded bg-light hover-shadow transition position-relative">
+                                                                <input type="checkbox"
+                                                                       class="form-check-input course-checkbox"
+                                                                       name="course_ids[]"
+                                                                       t-att-value="course.id"
+                                                                       t-att-id="'course_%s' % course.id"/>
+                                                                <label class="form-check-label w-100 stretched-link"
+                                                                       t-att-for="'course_%s' % course.id"
+                                                                       t-esc="course.name"/>
+                                                            </div>
+                                                        </div>
+                                                    </t>
+                                                </div>
+                                            </div>
+
+                                            <!-- Batch Selection -->
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label text-muted small fw-bold ms-1">Select Batch
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <select name="batch_id" id="batch_id" class="form-select form-select-lg"
+                                                        required="true">
+                                                    <option value="">-- Select Batch --</option>
+                                                    <t t-foreach="batches" t-as="batch">
+                                                        <option t-att-value="batch.id" t-esc="batch.name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+
+
+                                            <!-- Error message -->
+                                            <small class="text-danger d-none" id="course_error">
+                                                Please select at least one course.
+                                            </small>
+                                        </div>
+
+                                        <script>
+                                            (function() {
+                                            function attachValidation() {
+                                            const form = document.getElementById('student_form');
+                                            if (!form) return;
+
+                                            const checkboxes = document.querySelectorAll('.course-checkbox');
+                                            const error = document.getElementById('course_error');
+                                            const section = document.getElementById('course_section');
+
+                                            function validateCourses() {
+                                            return Array.from(checkboxes).some(cb => cb.checked);
+                                            }
+
+                                            // Remove existing listener to avoid duplicates if re-run
+                                            form.removeEventListener('submit', handleFormSubmit);
+                                            form.addEventListener('submit', handleFormSubmit);
+
+                                            function handleFormSubmit(e) {
+                                            if (!validateCourses()) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if(error) error.classList.remove('d-none');
+                                            if(section) section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            }
+                                            }
+
+                                            checkboxes.forEach(cb => {
+                                            cb.addEventListener('change', function () {
+                                            if (validateCourses() &amp;&amp; error) {
+                                            error.classList.add('d-none');
+                                            }
+                                            });
+                                            });
+                                            }
+
+                                            // Run on load
+                                            if (document.readyState === 'loading') {
+                                            document.addEventListener('DOMContentLoaded', attachValidation);
+                                            } else {
+                                            attachValidation();
+                                            }
+                                            })();
+                                        </script>
+
+                                        <!--                                        <div class="col-md-12">-->
+                                        <!--                                            <label class="form-label text-muted small fw-bold ms-1 mb-2">Select Courses of Interest</label>-->
+                                        <!--                                            <div class="row g-2">-->
+                                        <!--                                                <t t-foreach="courses" t-as="course">-->
+                                        <!--                                                    <div class="col-md-6">-->
+                                        <!--                                                        <div class="form-check p-3 border rounded bg-light hover-shadow transition position-relative">-->
+                                        <!--                                                            <input type="checkbox" class="form-check-input" name="course_ids" t-att-value="course.id" id="course_#{course.id}" />-->
+                                        <!--                                                            <label class="form-check-label w-100 stretched-link" t-att-for="'course_%s' % course.id" t-esc="course.name"/>-->
+                                        <!--                                                        </div>-->
+                                        <!--                                                    </div>-->
+                                        <!--                                                </t>-->
+                                        <!--                                            </div>-->
+                                        <!--                                        </div>-->
+                                        <!--                                    </div>-->
+                                    </div>
+
+                                    <!-- Guardian Details -->
+                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
+                                        <h5 class="text-success border-bottom pb-2 mb-4">
+                                            <i class="fa fa-users me-2"/>
+                                            Guardian Details
+                                        </h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="father_name" id="father_name"
+                                                           class="form-control" placeholder="Father Name"
+                                                           required="true"/>
+                                                    <label for="father_name">Father's Name</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="father_phone" id="father_phone"
+                                                           class="form-control" placeholder="Father Phone"
+                                                           required="true"/>
+                                                    <label for="father_phone">Father's Phone</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="mother_name" id="mother_name"
+                                                           class="form-control" placeholder="Mother Name"
+                                                           required="true"/>
+                                                    <label for="mother_name">Mother's Name</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="mother_phone" id="mother_phone"
+                                                           class="form-control" placeholder="Mother Phone"
+                                                           required="true"/>
+                                                    <label for="mother_phone">Mother's Phone</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" name="whatsapp_number" id="whatsapp_number"
+                                                           class="form-control" placeholder="Whatsapp Number"
+                                                           required="true"/>
+                                                    <label for="whatsapp_number">Whatsapp Number (Father/Mother)</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Social Media -->
+                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
+                                        <h5 class="text-success border-bottom pb-2 mb-4"><i
+                                                class="fa fa-share-alt me-2"/>Social Media
+                                        </h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <div class="input-group input-group-lg">
+                                                    <span class="input-group-text bg-light border-end-0">
+                                                        <i class="fa fa-instagram text-danger"/>
+                                                    </span>
+                                                    <div class="form-floating flex-grow-1">
+                                                        <input type="text" name="insta_id" id="insta_id"
+                                                               class="form-control border-start-0 ps-0"
+                                                               placeholder="Instagram ID"/>
+                                                        <label for="insta_id">Instagram ID</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center mt-5">
+                                        <button type="submit"
+                                                class="btn btn-success btn-lg px-5 py-3 shadow-sm rounded-pill w-50 fw-bold text-uppercase letter-spacing-1">
+                                            Next Step
+                                            <i class="fa fa-arrow-right ms-2"/>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ======================== REVIEW PAGE ======================== -->
+    <!--<template id="portal_student_review" name="Review Student">-->
+    <!--    <t t-call="website.layout">-->
+    <!--        <div class="container mt-5">-->
+    <!--            <h2 style="color: green; text-align: center; margin-bottom: 20px;">Review Student Details</h2>-->
+
+    <!--            <form method="post" action="/my/students/details/submit"-->
+    <!--                  class="p-4 border rounded shadow-sm bg-light">-->
+
+    <!--                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>-->
+
+    <!--                &lt;!&ndash; Pass all text fields except the preview image &ndash;&gt;-->
+    <!--                <t t-foreach="student.items()" t-as="item">-->
+    <!--                    <t t-if="item[0] != 'photo_preview'">-->
+    <!--                        <input type="hidden" t-att-name="item[0]" t-att-value="item[1]"/>-->
+    <!--                    </t>-->
+    <!--                </t>-->
+
+    <!--                &lt;!&ndash; PHOTO PREVIEW &ndash;&gt;-->
+    <!--                <div class="mb-3">-->
+    <!--                    <strong>Photo:</strong><br/>-->
+    <!--                    <img t-if="student.get('photo_preview')"-->
+    <!--                         t-att-src="'data:image/png;base64,%s' % student.get('photo_preview')"-->
+    <!--                         style="width:120px; border:1px solid #ccc; border-radius:4px;"/>-->
+    <!--                </div>-->
+
+    <!--                <div class="mb-2"><strong>Full Name:</strong> <t t-esc="student.get('name')"/></div>-->
+    <!--                <div class="mb-2"><strong>Date of Birth:</strong> <t t-esc="student.get('date_of_birth')"/></div>-->
+    <!--                <div class="mb-2"><strong>Gender:</strong> <t t-esc="student.get('gender')"/></div>-->
+    <!--                <div class="mb-2"><strong>Email:</strong> <t t-esc="student.get('email')"/></div>-->
+    <!--                <div class="mb-2"><strong>Phone:</strong> <t t-esc="student.get('phone')"/></div>-->
+    <!--                <div class="mb-2"><strong>District:</strong> <t t-esc="student.get('district')"/></div>-->
+    <!--                <div class="mb-2"><strong>City:</strong> <t t-esc="student.get('city')"/></div>-->
+
+
+    <!--                <button type="submit" class="btn btn-success mt-3 w-100">Confirm and Submit</button>-->
+    <!--            </form>-->
+    <!--        </div>-->
+    <!--    </t>-->
+    <!--</template>-->
+
+
+    <template id="portal_student_review" name="Review Student">
+        <t t-call="website.layout">
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="card shadow-lg border-0 rounded-lg overflow-hidden">
+                            <div class="card-header bg-success text-white text-center py-4">
+                                <h2 class="fw-bold mb-0">Review Your Details</h2>
+                                <p class="mb-0 opacity-75">Please confirm that all information is correct</p>
+                            </div>
+                            <div class="card-body p-5 bg-light">
+                                <form method="post" action="/my/students/details/submit">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                    <!-- Pass all hidden fields -->
+                                    <t t-foreach="student.items()" t-as="item">
+                                        <t t-if="item[0] == 'course_ids[]'">
+                                            <t t-foreach="item[1]" t-as="cid">
+                                                <input type="hidden" name="course_ids" t-att-value="cid"/>
+                                            </t>
+                                        </t>
+                                        <t t-elif="item[0] != 'photo_preview'">
+                                            <input type="hidden" t-att-name="item[0]" t-att-value="item[1]"/>
+                                        </t>
+                                    </t>
+
+                                    <div class="row align-items-center mb-5 bg-white p-4 rounded shadow-sm">
+                                        <div class="col-md-3 text-center">
+                                            <div class="d-inline-block p-1 border rounded bg-white shadow-sm">
+                                                <img t-if="student.get('photo_preview')"
+                                                     t-att-src="'data:image/png;base64,%s' % student.get('photo_preview')"
+                                                     class="img-fluid rounded"
+                                                     style="width: 150px; height: 190px; object-fit: cover;"
+                                                     alt="Student Photo"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9 border-start ps-4">
+                                            <h3 class="text-success mb-1">
+                                                <t t-esc="student.get('name')"/>
+                                            </h3>
+                                            <p class="text-muted mb-2">
+                                                <i class="fa fa-envelope me-2"/>
+                                                <t t-esc="student.get('email')"/>
+                                            </p>
+                                            <p class="text-muted mb-2">
+                                                <i class="fa fa-phone me-2"/>
+                                                <t t-esc="student.get('phone')"/>
+                                            </p>
+                                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                                <span class="badge bg-light text-dark border p-2">
+                                                    <i class="fa fa-birthday-cake me-1 text-success"/>
+                                                    <t t-esc="student.get('date_of_birth')"/>
+                                                </span>
+                                                <span class="badge bg-light text-dark border p-2">
+                                                    <i class="fa fa-birthday-cake me-1 text-success"/>
+                                                    <t t-esc="student.get('date_of_birth')"/>
+                                                </span>
+                                                <span class="badge bg-light text-dark border p-2">
+                                                    <i class="fa fa-venus-mars me-1 text-success"/>
+                                                    <t t-esc="student.get('gender')"/>
+                                                </span>
+                                                <span class="badge bg-light text-dark border p-2">
+                                                    <i class="fa fa-info-circle me-1 text-success"/>
+                                                    <t t-esc="student.get('joining_status')"/>
+                                                </span>
+                                                <span class="badge bg-light text-dark border p-2">
+                                                    <i class="fa fa-map-marker me-1 text-success"/>
+                                                    <t t-esc="student.get('branch')"/>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
+                                        <h5 class="text-success border-bottom pb-2 mb-4">Details Summary</h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6 border-bottom pb-2">
+                                                <strong>Address:</strong>
+                                                <span class="d-block text-muted"><t t-esc="student.get('district')"/>,
+                                                    <t t-esc="student.get('city')"/>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-6 border-bottom pb-2">
+                                                <strong>Academic:</strong>
+                                                <span class="d-block text-muted">
+                                                    <t t-esc="student.get('qualification')"/>
+                                                    from
+                                                    <t t-esc="student.get('school')"/>
+                                                    /
+                                                    <t t-esc="student.get('college')"/>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-12 border-bottom pb-2">
+                                                <strong>Selected Course:</strong>
+                                                <span class="d-block text-success fw-bold">
+                                                    <t t-esc="student.get('course_name')"/>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-12 border-bottom pb-2"
+                                                 t-if="student.get('admission_officer_text')">
+                                                <strong>Admission Officer:</strong>
+                                                <span class="d-block text-muted">
+                                                    <t t-esc="student.get('admission_officer_text')"/>
+                                                </span>
+                                            </div>
+
+                                            <div class="col-md-6 border-bottom pb-2 pt-2">
+                                                <strong>Guardian:</strong>
+                                                <span class="d-block text-muted">
+                                                    <t t-esc="student.get('father_name')"/> &amp;
+                                                    <t t-esc="student.get('mother_name')"/>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-6 border-bottom pb-2 pt-2">
+                                                <strong>Guardian Phones:</strong>
+                                                <span class="d-block text-muted">
+                                                    <t t-esc="student.get('father_phone')"/>
+                                                    /
+                                                    <t t-esc="student.get('mother_phone')"/>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-6 border-bottom pb-2 pt-2">
+                                                <strong>Whatsapp:</strong>
+                                                <span class="d-block text-muted">
+                                                    <t t-esc="student.get('whatsapp_number')"/>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-6 border-bottom pb-2 pt-2">
+                                                <strong>Instagram:</strong>
+                                                <span class="d-block text-muted">
+                                                    <t t-esc="student.get('insta_id')"/>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-5">
+                                        <button type="button" class="btn btn-outline-secondary px-4 py-2"
+                                                onclick="window.history.back();">
+                                            <i class="fa fa-arrow-left me-2"/>
+                                            Edit Details
+                                        </button>
+                                        <button type="submit"
+                                                class="btn btn-success btn-lg px-5 py-3 shadow-sm fw-bold">
+                                            Confirm and Submit
+                                            <i class="fa fa-check-circle ms-2"/>
+                                        </button>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ======================== SUCCESS PAGE ======================== -->
+    <template id="portal_student_success" name="Student Submission Success">
+        <t t-call="website.layout">
+            <div class="container py-5 text-center"
+                 style="min-height: 50vh; display: flex; align-items: center; justify-content: center;">
+                <div class="alert alert-success border-0 shadow-lg p-5 rounded-lg" style="max-width: 600px;">
+                    <div class="mb-4">
+                        <i class="fa fa-check-circle text-success" style="font-size: 5rem;"/>
+                    </div>
+                    <h3 class="fw-bold mb-3 success-text">Submitted Successfully!</h3>
+                    <p class="text-muted mb-4">Thank you for registering. Your details have been recorded.</p>
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted small mt-3">Redirecting you to home page...</p>
+                </div>
+                <script>
+                    setTimeout(function() {
+                    window.location.href = "https://logiceducation.org/";
+                    }, 3000);
+                </script>
+            </div>
+        </t>
+    </template>
+
+</odoo>

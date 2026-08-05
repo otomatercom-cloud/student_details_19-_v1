@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="action_batch_add_students_wizard" model="ir.actions.act_window">
+        <field name="name">Add Students</field>
+        <field name="res_model">batch.add.students.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- List View -->
+    <record id="view_student_batch_tree" model="ir.ui.view">
+        <field name="name">student.batch.list</field>
+        <field name="model">student.batch</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="student_count" string="Students"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_student_batch_form" model="ir.ui.view">
+        <field name="name">student.batch.form</field>
+        <field name="model">student.batch</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="%(action_batch_add_students_wizard)d"
+                            type="action" string="Add Students"
+                            class="btn-primary"
+                            context="{'default_batch_id': id}"/>
+                    <button name="action_sync_batch_to_moodle"
+                            type="object" string="🔗 Sync Batch to Moodle"
+                            class="btn-secondary"
+                            invisible="not moodle_course_id"/>
+                </header>
+                <sheet>
+
+                    <!-- ═══════════════════════════════════════════════════════
+                         FEE SUMMARY BOX — top right, professional card
+                    ═══════════════════════════════════════════════════════ -->
+                    <div class="o_field_widget" style="float:right;width:340px;margin:-4px 0 16px 24px;"
+                         invisible="not fee_structure_ids">
+
+                        <!-- Lump Sum Package -->
+                        <div invisible="not has_lumpsum_fee"
+                             style="background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 60%,#0ea5e9 100%);
+                                    border-radius:16px;padding:0;overflow:hidden;
+                                    box-shadow:0 8px 24px rgba(37,99,235,0.35);margin-bottom:10px;">
+                            <div style="padding:10px 18px 6px;border-bottom:1px solid rgba(255,255,255,0.15);">
+                                <div style="color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;
+                                            letter-spacing:1px;text-transform:uppercase;">💰 Lump Sum Package</div>
+                            </div>
+                            <div style="padding:10px 18px 14px;">
+                                <table style="width:100%;border-collapse:collapse;">
+                                    <tr invisible="fee_lumpsum == 0">
+                                        <td style="color:rgba(255,255,255,0.8);font-size:12px;padding:2px 0;">
+                                            Course Fee
+                                        </td>
+                                        <td style="text-align:right;color:#fff;font-weight:600;font-size:13px;">
+                                            ₹ <field name="fee_lumpsum" readonly="1" nolabel="1"
+                                                     options="{'digits': [10,0]}"/>
+                                        </td>
+                                    </tr>
+                                    <tr invisible="fee_admission == 0">
+                                        <td style="color:rgba(255,255,255,0.8);font-size:12px;padding:2px 0;">
+                                            Admission Fee
+                                        </td>
+                                        <td style="text-align:right;color:#fff;font-weight:600;font-size:13px;">
+                                            ₹ <field name="fee_admission" readonly="1" nolabel="1"
+                                                     options="{'digits': [10,0]}"/>
+                                        </td>
+                                    </tr>
+                                    <tr invisible="fee_registration == 0">
+                                        <td style="color:rgba(255,255,255,0.8);font-size:12px;padding:2px 0;">
+                                            Registration Fee
+                                        </td>
+                                        <td style="text-align:right;color:#fff;font-weight:600;font-size:13px;">
+                                            ₹ <field name="fee_registration" readonly="1" nolabel="1"
+                                                     options="{'digits': [10,0]}"/>
+                                        </td>
+                                    </tr>
+                                    <tr invisible="fee_exam == 0">
+                                        <td style="color:rgba(255,255,255,0.8);font-size:12px;padding:2px 0;">
+                                            Exam Fee
+                                        </td>
+                                        <td style="text-align:right;color:#fff;font-weight:600;font-size:13px;">
+                                            ₹ <field name="fee_exam" readonly="1" nolabel="1"
+                                                     options="{'digits': [10,0]}"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <!-- Divider + Total -->
+                                <div style="border-top:1px solid rgba(255,255,255,0.3);margin:10px 0 6px;"/>
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span style="color:#bfdbfe;font-size:12px;font-weight:700;
+                                                 text-transform:uppercase;letter-spacing:0.5px;">
+                                        Total Package
+                                    </span>
+                                    <span style="color:#fff;font-size:20px;font-weight:800;
+                                                 text-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                                        ₹ <field name="total_lumpsum_package" readonly="1" nolabel="1"
+                                                  options="{'digits': [10,0]}"/>
+                                    </span>
+                                </div>
+                                <div style="color:rgba(255,255,255,0.5);font-size:10px;margin-top:2px;text-align:right;">
+                                    Inclusive of GST
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Installment Package -->
+                        <div invisible="not has_installment_fee"
+                             style="background:linear-gradient(135deg,#065f46 0%,#059669 60%,#10b981 100%);
+                                    border-radius:16px;padding:0;overflow:hidden;
+                                    box-shadow:0 8px 24px rgba(5,150,105,0.35);">
+                            <div style="padding:10px 18px 6px;border-bottom:1px solid rgba(255,255,255,0.15);">
+                                <div style="color:rgba(255,255,255,0.75);font-size:11px;font-weight:700;
+                                            letter-spacing:1px;text-transform:uppercase;">📅 Installment Package</div>
+                            </div>
+                            <div style="padding:10px 18px 14px;">
+                                <table style="width:100%;border-collapse:collapse;">
+                                    <tr>
+                                        <td style="color:rgba(255,255,255,0.8);font-size:12px;padding:2px 0;">
+                                            Installments Total
+                                        </td>
+                                        <td style="text-align:right;color:#fff;font-weight:600;font-size:13px;">
+                                            ₹ <field name="fee_installment" readonly="1" nolabel="1"
+                                                     options="{'digits': [10,0]}"/>
+                                        </td>
+                                    </tr>
+                                    <tr invisible="fee_admission == 0">
+                                        <td style="color:rgba(255,255,255,0.8);font-size:12px;padding:2px 0;">
+                                            Admission Fee
+                                        </td>
+                                        <td style="text-align:right;color:#fff;font-weight:600;font-size:13px;">
+                                            ₹ <field name="fee_admission" readonly="1" nolabel="1"
+                                                     options="{'digits': [10,0]}"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div style="border-top:1px solid rgba(255,255,255,0.3);margin:10px 0 6px;"/>
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span style="color:#a7f3d0;font-size:12px;font-weight:700;
+                                                 text-transform:uppercase;letter-spacing:0.5px;">
+                                        Total Package
+                                    </span>
+                                    <span style="color:#fff;font-size:20px;font-weight:800;
+                                                 text-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                                        ₹ <field name="total_installment_package" readonly="1" nolabel="1"
+                                                  options="{'digits': [10,0]}"/>
+                                    </span>
+                                </div>
+                                <div style="color:rgba(255,255,255,0.5);font-size:10px;margin-top:2px;text-align:right;">
+                                    Inclusive of GST
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- Hidden fields needed for invisible conditions -->
+                    <field name="has_lumpsum_fee" invisible="1"/>
+                    <field name="has_installment_fee" invisible="1"/>
+                    <field name="fee_lumpsum" invisible="1"/>
+                    <field name="fee_admission" invisible="1"/>
+                    <field name="fee_installment" invisible="1"/>
+                    <field name="fee_registration" invisible="1"/>
+                    <field name="fee_exam" invisible="1"/>
+                    <field name="fee_material" invisible="1"/>
+                    <field name="total_lumpsum_package" invisible="1"/>
+                    <field name="total_installment_package" invisible="1"/>
+
+                    <group>
+                        <field name="name"/>
+                        <field name="start_date"/>
+                        <field name="end_date"/>
+                        <field name="active"/>
+                        <field name="coordinator_ids" widget="many2many_tags"/>
+                    </group>
+                    <group string="Moodle">
+                        <field name="moodle_course_id"/>
+                        <field name="moodle_enrolled_count" readonly="1"/>
+                    </group>
+                    <div style="clear:both;"/>
+                    <notebook>
+                        <page string="Students">
+                            <field name="student_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="roll_no"/>
+                                    <field name="batch_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Courses">
+                            <field name="course_ids" widget="many2many_tags"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Wizard View -->
+    <record id="view_batch_add_students_wizard" model="ir.ui.view">
+        <field name="name">batch.add.students.wizard.form</field>
+        <field name="model">batch.add.students.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="batch_id" readonly="1"/>
+                    <field name="student_ids"/>
+                </group>
+                <footer>
+                    <button string="Add" type="object" name="action_add_students" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_active_batches" model="ir.actions.act_window">
+        <field name="name">Active Batches</field>
+        <field name="res_model">student.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('active','=',True)]</field>
+    </record>
+
+    <record id="action_inactive_batches" model="ir.actions.act_window">
+        <field name="name">Inactive Batches</field>
+        <field name="res_model">student.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('active','=',False)]</field>
+    </record>
+
+    <record id="action_student_batch" model="ir.actions.act_window">
+        <field name="name">Batches</field>
+        <field name="res_model">student.batch</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menus -->
+    <menuitem id="menu_student_batch" name="Batches" action="action_student_batch"
+              parent="menu_student_root" sequence="6"/>
+    <menuitem id="menu_active_batch" name="Active Batches"
+              parent="menu_student_root" action="action_active_batches" sequence="7"/>
+    <menuitem id="menu_inactive_batch" name="Inactive Batches"
+              parent="menu_student_root" action="action_inactive_batches" sequence="8"/>
+
+</odoo>
