@@ -7,3 +7,4 @@ from . import razorpay_payment
 from . import batch_transfer
 from . import moodle_portal_sync
 from . import saas_dashboard
+from . import demo_data

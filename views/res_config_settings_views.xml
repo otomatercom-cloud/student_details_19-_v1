@@ -59,6 +59,22 @@
                             <field name="razorpay_webhook_secret" password="True"/>
                         </group>
                     </group>
+                <div class="oe_title" style="margin-top:24px;">
+                        <h1>Demo Data</h1>
+                        <p class="text-muted">
+                            For demonstrations / training only. Creates demo users for every role
+                            (password Demo@1234), courses, batches, fee structures, 30 students with
+                            payments, transfers and attendance. Never load on a live database.
+                        </p>
+                    </div>
+                    <group>
+                        <button name="action_load_demo_data" type="object" string="Load Demo Data"
+                                class="btn-primary"
+                                confirm="Create demo users, batches and students? Use only on a demo/training database."/>
+                        <button name="action_remove_demo_data" type="object" string="Remove Demo Data"
+                                class="btn-secondary"
+                                confirm="Delete all demo records created by Load Demo Data?"/>
+                    </group>
                 </sheet>
                 <footer>
                     <button string="Save" name="execute" type="object" class="btn-primary"/>

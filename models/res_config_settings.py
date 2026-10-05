@@ -38,3 +38,17 @@ class ResConfigSettings(models.TransientModel):
             sequence = settings._get_registration_sequence()
             if sequence and settings.student_registration_next_number:
                 sequence.sudo().number_next = settings.student_registration_next_number
+
+    def action_load_demo_data(self):
+        self.env['student.demo.data'].load()
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
+            'title': 'Demo data loaded', 'type': 'success', 'sticky': True,
+            'message': 'Login: demo.<role>@demo.otomater.com / Demo@1234 (see the demo guide).'}}
+
+    def action_remove_demo_data(self):
+        archived = self.env['student.demo.data'].remove()
+        msg = 'All demo records removed.'
+        if archived:
+            msg += ' Archived (have history): ' + ', '.join(archived[:6])
+        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                'params': {'title': 'Demo data removed', 'message': msg, 'type': 'warning', 'sticky': True}}
