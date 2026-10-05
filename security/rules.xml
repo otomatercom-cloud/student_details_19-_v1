@@ -61,4 +61,32 @@
         <field name="groups" eval="[(4, ref('student_details_19.group_admission_officer'))]"/>
     </record>
 
+
+    <!-- Manager: full access (group rules are OR-ed, so a manager who also holds a
+         coordinator / admission-officer group is NOT restricted by those rules) -->
+    <record id="rule_course_master_manager_all" model="ir.rule">
+        <field name="name">Student Manager: All Courses</field>
+        <field name="model_id" ref="model_course_master"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
+    </record>
+    <record id="rule_student_batch_manager_all" model="ir.rule">
+        <field name="name">Student Manager: All Batches</field>
+        <field name="model_id" ref="model_student_batch"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
+    </record>
+    <record id="rule_student_details_manager_all" model="ir.rule">
+        <field name="name">Student Manager: All Students</field>
+        <field name="model_id" ref="model_student_details"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
+    </record>
+    <record id="rule_st_attendance_manager_all" model="ir.rule">
+        <field name="name">Student Manager: All Attendance</field>
+        <field name="model_id" ref="model_st_attendance"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
+    </record>
+
 </odoo>

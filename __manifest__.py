@@ -1,6 +1,6 @@
 {
     'name': 'Student Details',
-    'version': '19.0.1.2.1',
+    'version': '19.0.1.2.2',
     'summary': 'Collect and manage student details with portal access',
     'sequence': 1,
     'category': 'Education',
