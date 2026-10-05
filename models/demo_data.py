@@ -34,12 +34,13 @@ BATCHES = [('b_ca', 'Demo CA Foundation - Morning 2026', ['ca'], -60, 120, 'ac1'
            ('b_acca', 'Demo ACCA - Weekend 2026', ['acca'], -30, 200, 'ac1'),
            ('b_cma', 'Demo CMA USA - Evening 2026', ['cma'], -45, 150, 'ac2'),
            ('b_dm', 'Demo Digital Marketing - Oct 2026', ['dm'], 10, 100, 'ac2'),
-           ('b_old', 'Demo CA Foundation - 2025 (Completed)', ['ca'], -300, -20, 'ac1')]
+           ('b_old', 'Demo CA Foundation - 2025 (Completed)', ['ca'], -300, -20, 'ac1'),
+           ('b_inactive', 'Demo ACCA - 2024 (Closed)', ['acca'], -500, -330, 'ac1')]
 FIRST = ['Aswin', 'Meera', 'Nikhil', 'Sneha', 'Adithya', 'Lakshmi', 'Vishnu', 'Gayathri', 'Akhil', 'Remya',
          'Jishnu', 'Athira', 'Midhun', 'Parvathy', 'Sanjay', 'Keerthi', 'Basil', 'Nimisha', 'Abhijith', 'Devika']
 LAST = ['Nair', 'Menon', 'Kurian', 'Thomas', 'Varghese', 'Pillai', 'Krishnan', 'Joseph', 'Mathew', 'Das']
 DISTRICTS = ['Ernakulam', 'Kozhikode', 'Thrissur', 'Kannur', 'Palakkad', 'Kottayam', 'Malappuram', 'Alappuzha']
-BRANCHES = ['kochi', 'calicut', 'kottayam', 'trivandrum', 'online']
+BRANCHES = ['kochi', 'calicut', 'kottayam', 'trivandrum', 'malappuram', 'kozhikode', 'online']
 MODES = ['cash', 'upi', 'neft', 'card']
 
 
@@ -134,6 +135,7 @@ class StudentDemoData(models.AbstractModel):
             for c in ckeys:
                 courses[c].write({'batch_ids': [(4, batches[key].id)]})
 
+        batches['b_inactive'].write({'active': False})
         active_b = ['b_ca', 'b_acca', 'b_cma']
         students = []
         for n_ in range(1, 31):
@@ -151,7 +153,7 @@ class StudentDemoData(models.AbstractModel):
                 'whatsapp_number': '9200000%03d' % n_,
                 'district': rnd.choice(DISTRICTS), 'city': 'Demo City', 'qualification': rnd.choice(['Plus Two', 'B.Com', 'BBA', 'Degree']),
                 'logic_join': rnd.choice(['ads', 'social_media', 'seminar', 'reference']),
-                'joining_status': 'new', 'branch': rnd.choice(BRANCHES),
+                'joining_status': 'existing' if n_ % 5 == 0 else 'new', 'branch': BRANCHES[(n_ - 1) % len(BRANCHES)],
                 'batch_id': batch.id, 'course_ids': [(6, 0, batch.course_ids.ids)],
                 'admission_officer_id': users['ao1' if n_ % 2 else 'ao2'].id,
                 'admission_officer_text': 'Demo Officer',

@@ -81,8 +81,14 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <!-- Menu -->
-    <menuitem id="menu_st_attendance" name="Attendance"
-              parent="menu_student_root" action="action_st_attendance" sequence="5"/>
+    <!-- Menu: "Attendance" is a folder; records + report are its children -->
+    <record id="menu_st_attendance" model="ir.ui.menu">
+        <field name="name">Attendance</field>
+        <field name="parent_id" ref="menu_student_root"/>
+        <field name="sequence">5</field>
+        <field name="action" eval="False"/>
+    </record>
+    <menuitem id="menu_st_attendance_records" name="Attendance Records"
+              parent="menu_st_attendance" action="action_st_attendance" sequence="10"/>
 
 </odoo>

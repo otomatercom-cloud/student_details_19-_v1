@@ -12,7 +12,7 @@ Student Details → **Registration Settings** → *Demo Data* → **Load Demo Da
 | Academic Coordinators | demo.ac1@… (CA, ACCA batches) / demo.ac2@… (CMA, Digital Marketing) |
 | Course Coordinators | demo.cc1@… (CA, ACCA) / demo.cc2@… (CMA, Digital Marketing) |
 
-Data: 4 courses, 5 batches (3 live, 1 upcoming, 1 completed), fee structures (lump sum 59,000, 4-installment 60,000, admission fee), 30 students, enrollments with unpaid / partial / paid payments, 2 batch transfers, 6 days of locked attendance for each live batch.
+Data: 4 courses, 6 batches (3 live, 1 upcoming, 1 completed, 1 inactive), students spread over all 7 branches (Kochi … Online), fee structures (lump sum 59,000, 4-installment 60,000, admission fee), 30 students, enrollments with unpaid / partial / paid payments, 2 batch transfers, 6 days of locked attendance for each live batch.
 
 ## 3. Demo script (≈12 min)
 1. **Manager** – open Students: show register numbers (ANJ/yyyy/nn), wallet status (Clear / Partial / Due), filter by branch/batch.
