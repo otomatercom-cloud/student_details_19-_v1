@@ -128,8 +128,7 @@ class StudentDemoData(models.AbstractModel):
             batches[key] = self._demo_get('student.batch', key, {
                 'name': name, 'start_date': today + timedelta(days=s), 'end_date': today + timedelta(days=e),
                 'course_ids': [(6, 0, [courses[c].id for c in ckeys])],
-                'coordinator_ids': [(6, 0, [users[ac].id])],
-                'fee_structure_ids': [(6, 0, [f.id for f in fees.values()])]})
+                'coordinator_ids': [(6, 0, [users[ac].id])]})
         # courses <-> batches inverse
         for key, name, ckeys, s, e, ac in BATCHES:
             for c in ckeys:
