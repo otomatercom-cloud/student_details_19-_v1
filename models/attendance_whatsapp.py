@@ -30,13 +30,13 @@ DEFAULT_LOW_MSG = (
 
 CONFIG_DEFAULTS = {
     'enabled': 'False',
-    'provider': 'gateway',
+    'provider': 'meta',
     'gateway_url': '',
     'gateway_token': '',
     'meta_phone_id': '',
+    'meta_waba_id': '',
     'meta_token': '',
     'meta_api_version': 'v21.0',
-    'use_template': 'False',
     'template_lang': 'en',
     'absent_template': '',
     'late_template': '',
@@ -98,7 +98,7 @@ class AttendanceWhatsappLog(models.Model):
     def _get_config(self, overrides=None):
         icp = self.env['ir.config_parameter'].sudo()
         cfg = {k: icp.get_param(PARAM_PREFIX + k, d) for k, d in CONFIG_DEFAULTS.items()}
-        for key in ('enabled', 'use_template'):
+        for key in ('enabled',):
             cfg[key] = str(cfg[key]) == 'True'
         try:
             cfg['low_threshold'] = float(cfg['low_threshold'])
@@ -162,7 +162,7 @@ class AttendanceWhatsappLog(models.Model):
             values = self._student_values(student, attendance.batch_id, cfg)
             values.update({'date': fields.Date.to_string(attendance.date),
                            'session': session_label})
-            template_name = cfg['%s_template' % mtype] if cfg['use_template'] else ''
+            template_name = cfg['%s_template' % mtype] if cfg['provider'] == 'meta' else ''
             vals_list.append({
                 'student_id': student.id,
                 'batch_id': attendance.batch_id.id,
@@ -201,7 +201,7 @@ class AttendanceWhatsappLog(models.Model):
                 'date_from': fields.Date.to_string(date_from),
                 'date_to': fields.Date.to_string(date_to),
             })
-            template_name = cfg['low_template'] if cfg['use_template'] else ''
+            template_name = cfg['low_template'] if cfg['provider'] == 'meta' else ''
             vals_list.append({
                 'student_id': student.id,
                 'batch_id': batch.id,

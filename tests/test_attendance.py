@@ -20,6 +20,7 @@ class TestAttendance(TransactionCase):
         cls.s3 = Student.create({'name': 'Cia', 'branch': 'kochi', 'batch_id': cls.batch.id})
         icp = cls.env['ir.config_parameter'].sudo()
         icp.set_param('student_details.att_wa.enabled', 'True')
+        icp.set_param('student_details.att_wa.provider', 'gateway')
         icp.set_param('student_details.att_wa.gateway_url', 'https://gw.example.com/send')
 
     def _sheet(self, day='2026-10-01', session='full_day'):
@@ -148,3 +149,25 @@ class TestAttendance(TransactionCase):
         from odoo.addons.student_details_19.models.attendance_whatsapp import render_message
         out = render_message('Hi {student} {__class__.__mro__} {unknown}', {'student': 'Z'})
         self.assertEqual(out, 'Hi Z {__class__.__mro__} {unknown}')
+
+    def test_10_meta_template_payload(self):
+        icp = self.env['ir.config_parameter'].sudo()
+        icp.set_param('student_details.att_wa.provider', 'meta')
+        icp.set_param('student_details.att_wa.meta_phone_id', '123')
+        icp.set_param('student_details.att_wa.meta_token', 'tok')
+        icp.set_param('student_details.att_wa.absent_template', 'att_absent')
+        sheet = self._sheet()
+        sheet.attendance_line_ids.filtered(lambda l: l.student_id == self.s1).status = 'absent'
+        sheet.action_lock()
+        log = self.env['otm.attendance.whatsapp.log'].search([('attendance_id', '=', sheet.id)])
+        self.assertEqual(log.template_name, 'att_absent')
+        ok = MagicMock(ok=True, status_code=200)
+        ok.json.return_value = {'messages': [{'id': 'wamid.1'}]}
+        with patch('odoo.addons.student_details_19.models.attendance_whatsapp.requests.post',
+                   return_value=ok) as post:
+            log._process_queue()
+        body = post.call_args.kwargs['json']
+        self.assertEqual(body['type'], 'template')
+        self.assertEqual(body['template']['name'], 'att_absent')
+        self.assertEqual(body['template']['components'][0]['parameters'][0]['text'], 'Anu')
+        self.assertEqual(log.state, 'sent')

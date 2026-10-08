@@ -63,7 +63,7 @@
                         <h1>Attendance WhatsApp Alerts</h1>
                         <p class="text-muted">
                             Guardians receive a WhatsApp message when their child is marked absent
-                            (optionally late) and when attendance falls below the minimum. Messages are
+                            (optionally late) and when attendance falls below the minimum. Messages use your approved Meta templates (or the text below with a gateway) and are
                             queued and sent within minutes; see Attendance &gt; WhatsApp Log.
                             Placeholders: {student} {reg_no} {batch} {date} {session} {institute}
                             {percentage} {threshold} {date_from} {date_to}.
@@ -79,16 +79,28 @@
                             <field name="att_wa_institute_name"/>
                         </group>
                         <group>
-                            <field name="att_wa_gateway_url" invisible="att_wa_provider != 'gateway'"/>
-                            <field name="att_wa_gateway_token" password="True" invisible="att_wa_provider != 'gateway'"/>
                             <field name="att_wa_meta_phone_id" invisible="att_wa_provider != 'meta'"/>
                             <field name="att_wa_meta_token" password="True" invisible="att_wa_provider != 'meta'"/>
+                            <field name="att_wa_meta_waba_id" invisible="att_wa_provider != 'meta'"/>
                             <field name="att_wa_meta_api_version" invisible="att_wa_provider != 'meta'"/>
-                            <field name="att_wa_use_template" invisible="att_wa_provider != 'meta'"/>
-                            <field name="att_wa_template_lang" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
-                            <field name="att_wa_absent_template" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
-                            <field name="att_wa_late_template" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
-                            <field name="att_wa_low_template" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
+                            <field name="att_wa_template_lang" invisible="att_wa_provider != 'meta'"/>
+                            <field name="att_wa_gateway_url" invisible="att_wa_provider != 'gateway'"/>
+                            <field name="att_wa_gateway_token" password="True" invisible="att_wa_provider != 'gateway'"/>
+                            <button name="action_att_wa_check_connection" type="object" invisible="att_wa_provider != 'meta'"
+                                    string="Check connection" class="btn-link"/>
+                        </group>
+                    </group>
+                    <group invisible="att_wa_provider != 'meta'">
+                        <group>
+                            <field name="att_wa_absent_template"/>
+                            <field name="att_wa_late_template"/>
+                        </group>
+                        <group>
+                            <field name="att_wa_low_template"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
                             <field name="att_wa_test_number" placeholder="e.g. 9876543210"/>
                             <button name="action_att_wa_test" type="object"
                                     string="Send Test Message" class="btn-secondary"/>
