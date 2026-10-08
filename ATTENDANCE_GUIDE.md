@@ -20,9 +20,8 @@ with Retry / Send Now. To use another WhatsApp service, override `otm.attendance
 Student Details > Marks > Exams: create exam (batch, subject, max/pass marks) -> students auto-listed -> enter marks (or tick Absent) -> **Publish Marks** (locks) -> marks go to parents on WhatsApp (or press *Send Marks to Parents*). Coordinators can do the same at `/my/marks`.
 Settings > WhatsApp: set the *Marks template* name + message, and *Auto-send on publish*.
 
-Meta template `student_marks_report` (Utility, English), 6 variables:
-    📝 *Exam Result – {{2}}*
-    Dear Parent, here is the result of *{{1}}* for {{2}} held on {{3}}:
-    🎯 Marks: *{{4}}* ({{5}}%)
-    ✅ Result: *{{6}}*
+Meta template `student_marks_report` (Utility, English), 4 variables:
+    📝 *Exam Result*
+    Dear Parent, {{1}} scored *{{3}}* in {{2}}.
+    ✅ Result: *{{4}}*
     Thank you, Logic School of Management

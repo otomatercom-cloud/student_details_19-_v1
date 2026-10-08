@@ -232,6 +232,7 @@ class StudentPortal(http.Controller):
         return request.render('student_details_19.portal_marks_home', {
             'batches': batches, 'exams': exams, 'today': fields.Date.context_today(exams),
             'exam_types': request.env['otm.exam']._fields['exam_type'].selection,
+            'subjects': request.env['otm.exam.subject'].search([]),
             'error': kw.get('error'),
         })
 
@@ -250,8 +251,10 @@ class StudentPortal(http.Controller):
                 raise ValueError('missing')
             if exam_type not in dict(request.env['otm.exam']._fields['exam_type'].selection):
                 exam_type = 'other'
+            Subject = request.env['otm.exam.subject']
+            subj = Subject.search([('name', '=ilike', subject)], limit=1) or Subject.create({'name': subject})
             exam = request.env['otm.exam'].create({
-                'batch_id': batch.id, 'title': title, 'subject': subject, 'exam_date': day,
+                'batch_id': batch.id, 'title': title, 'subject_id': subj.id, 'subject': subj.name, 'exam_date': day,
                 'max_marks': max_marks, 'pass_marks': pass_marks, 'exam_type': exam_type,
                 'coordinator_id': request.env.user.id,
             })

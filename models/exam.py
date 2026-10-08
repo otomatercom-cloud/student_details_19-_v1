@@ -12,6 +12,18 @@ EXAM_TYPES = [
 ]
 
 
+class OtmExamSubject(models.Model):
+    _name = "otm.exam.subject"
+    _description = "Exam Subject / Paper"
+    _order = "name"
+
+    name = fields.Char(string="Subject / Paper", required=True)
+    code = fields.Char(string="Code")
+    active = fields.Boolean(default=True)
+
+    _name_uniq = models.Constraint('unique(name)', 'This subject already exists.')
+
+
 class OtmExam(models.Model):
     _name = 'otm.exam'
     _description = 'Exam / Mark Entry'
@@ -21,7 +33,10 @@ class OtmExam(models.Model):
     name = fields.Char(string="Reference", compute='_compute_name', store=True)
     title = fields.Char(string="Exam Title", required=True, tracking=True,
                         help="e.g. Unit Test 1, Mock Exam")
-    subject = fields.Char(string="Subject / Paper", required=True, tracking=True)
+    subject_id = fields.Many2one('otm.exam.subject', string="Subject", tracking=True,
+                                 domain=[('active', '=', True)])
+    subject = fields.Char(string="Subject / Paper", required=True, tracking=True,
+                          compute='_compute_subject', store=True, readonly=False, precompute=True)
     exam_type = fields.Selection(EXAM_TYPES, string="Exam Type", default='unit_test', required=True)
     batch_id = fields.Many2one('student.batch', string="Batch", required=True, tracking=True,
                                domain=[('active', '=', True)])
@@ -55,6 +70,12 @@ class OtmExam(models.Model):
                 raise ValidationError(_("Maximum marks must be greater than zero."))
             if not 0 <= rec.pass_marks <= rec.max_marks:
                 raise ValidationError(_("Pass marks must be between 0 and the maximum marks."))
+
+    @api.depends('subject_id')
+    def _compute_subject(self):
+        for rec in self:
+            if rec.subject_id:
+                rec.subject = rec.subject_id.name
 
     @api.depends('title', 'subject', 'batch_id')
     def _compute_name(self):

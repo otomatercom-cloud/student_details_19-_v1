@@ -239,11 +239,10 @@ class TestExamMarks(TransactionCase):
         logs = Log.search([('exam_id', '=', self.exam.id)])
         self.assertEqual(len(logs), 3)
         la = logs.filtered(lambda l: l.student_id == self.a)
-        self.assertIn('45 / 50', la.message)
+        self.assertIn('45/50', la.message)
         self.assertEqual(la.template_name, 'student_marks_alert')
         self.assertEqual(__import__('json').loads(la.template_params),
-                         ['Asha', 'Unit Test 1 - Accounting', str(self.exam.exam_date),
-                          '45 / 50', '90.0', 'Pass'])
+                         ['Asha', 'Unit Test 1 - Accounting', '45/50 (90.0%)', 'Pass'])
         self.assertIn('Absent', logs.filtered(lambda l: l.student_id == self.c).message)
         self.exam._queue_marks_whatsapp()          # unchanged marks: no duplicates
         self.assertEqual(Log.search_count([('exam_id', '=', self.exam.id)]), 3)

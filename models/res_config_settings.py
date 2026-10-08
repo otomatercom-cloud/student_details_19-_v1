@@ -54,13 +54,13 @@ class ResConfigSettings(models.TransientModel):
         config_parameter=PARAM_PREFIX + 'template_lang')
     att_wa_absent_template = fields.Char(
         string="Absent template",
-        help="Variables: 1 student, 2 date, 3 batch, 4 session.", config_parameter=PARAM_PREFIX + 'absent_template')
+        help="Variables: 1 student, 2 exam - subject, 3 marks (e.g. 45/50 (90.0%)), 4 result.")
     att_wa_late_template = fields.Char(
         string="Late template",
-        help="Variables: 1 student, 2 date, 3 batch, 4 session.", config_parameter=PARAM_PREFIX + 'late_template')
+        help="Variables: 1 student, 2 exam - subject, 3 marks (e.g. 45/50 (90.0%)), 4 result.")
     att_wa_low_template = fields.Char(
         string="Low attendance template",
-        help="Variables: 1 student, 2 batch, 3 attendance %, 4 required %.", config_parameter=PARAM_PREFIX + 'low_template')
+        help="Variables: 1 student, 2 exam - subject, 3 marks (e.g. 45/50 (90.0%)), 4 result.")
     att_wa_notify_scope = fields.Selection(
         [('absent', 'Absentees only'), ('absent_late', 'Absentees and latecomers')],
         string="Send Alerts For", default='absent',
@@ -85,7 +85,7 @@ class ResConfigSettings(models.TransientModel):
         config_parameter=PARAM_PREFIX + 'low_message')
     att_wa_marks_template = fields.Char(
         string="Marks template", config_parameter=PARAM_PREFIX + 'marks_template',
-        help="Variables: 1 student, 2 exam - subject, 3 date, 4 marks (e.g. 45 / 50), 5 percentage, 6 result.")
+        help="Variables: 1 student, 2 exam - subject, 3 marks (e.g. 45/50 (90.0%)), 4 result.")
     att_wa_marks_message = fields.Char(
         string="Marks Message", default=DEFAULT_MARKS_MSG,
         config_parameter=PARAM_PREFIX + 'marks_message')

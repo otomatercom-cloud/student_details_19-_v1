@@ -67,3 +67,6 @@ access_otm_exam_academic,otm.exam.academic,model_otm_exam,student_details_19.gro
 access_otm_exam_line_academic,otm.exam.line.academic,model_otm_exam_line,student_details_19.group_academic_coordinator,1,1,1,0
 access_otm_exam_course,otm.exam.course,model_otm_exam,student_details_19.group_course_coordinator,1,1,1,0
 access_otm_exam_line_course,otm.exam.line.course,model_otm_exam_line,student_details_19.group_course_coordinator,1,1,1,0
+access_otm_exam_subject_manager,otm.exam.subject.manager,model_otm_exam_subject,student_details_19.group_student_manager,1,1,1,1
+access_otm_exam_subject_academic,otm.exam.subject.academic,model_otm_exam_subject,student_details_19.group_academic_coordinator,1,1,1,0
+access_otm_exam_subject_course,otm.exam.subject.course,model_otm_exam_subject,student_details_19.group_course_coordinator,1,1,1,0

@@ -245,7 +245,7 @@ class AttendanceWhatsappLog(models.Model):
             if student.att_wa_opt_out:
                 continue
             absent = line.status == 'absent'
-            marks_txt = 'Absent' if absent else '%g / %g' % (line.marks, exam.max_marks)
+            marks_txt = 'Absent' if absent else '%g/%g' % (line.marks, exam.max_marks)
             values = self._student_values(student, exam.batch_id, cfg)
             values.update({
                 'exam': exam.title, 'subject': exam.subject,
@@ -265,10 +265,11 @@ class AttendanceWhatsappLog(models.Model):
                 'message_type': 'marks', 'number': number,
                 'message': render_message(cfg['marks_message'], values),
                 'template_name': template_name,
-                # {{1}} student {{2}} exam - subject {{3}} date {{4}} marks {{5}} % {{6}} result
+                # {{1}} student {{2}} exam - subject {{3}} marks (with %) {{4}} result
                 'template_params': json.dumps([
-                    values['student'], '%s - %s' % (exam.title, exam.subject), values['date'],
-                    values['marks'], values['percentage'], values['result']]),
+                    values['student'], '%s - %s' % (exam.title, exam.subject),
+                    values['marks'] if absent else '%s (%s%%)' % (values['marks'], values['percentage']),
+                    values['result']]),
                 'state': 'queued' if number else 'skipped',
                 'error': False if number else _("No valid WhatsApp / phone number on the student."),
                 'dedup_key': key,
