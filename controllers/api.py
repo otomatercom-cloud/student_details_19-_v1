@@ -43,12 +43,16 @@ def api(route, methods=('GET',), auth='user'):
                 result = fn(self, *args, body=body, **kw)
                 return _resp({'ok': True, 'data': result})
             except (AccessError,):
+                request.env.cr.rollback()
                 return _err(_("You do not have permission for this action."), 403)
             except MissingError:
+                request.env.cr.rollback()
                 return _err(_("Record not found."), 404)
             except (UserError, ValidationError) as e:
+                request.env.cr.rollback()   # never keep partial writes of a failed call
                 return _err(str(e.args[0]) if e.args else str(e), 400)
             except (ValueError, TypeError, KeyError) as e:
+                request.env.cr.rollback()
                 _logger.info("API bad request on %s: %r", route, e)
                 return _err(_("Invalid request data."), 400)
             except Exception:  # noqa

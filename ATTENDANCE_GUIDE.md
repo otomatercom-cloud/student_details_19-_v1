@@ -28,3 +28,9 @@ Meta template `student_marks_report` (Utility, English), 4 variables:
 
 ## Next.js frontend API (v19.0.1.6.0)
 `controllers/api.py` exposes JSON endpoints under `/api/sdm/*` (session auth, ACL/record rules apply; `/api/sdm/public/*` is open for the join form). Used by the `student-frontend` Next.js app. Restart Odoo after deploying this release.
+
+## Finance API (v1.7.0) – used by the Next.js frontend
+`/api/sdm/fees`, `/fees/save` (installments, GST inclusive/exclusive), `/enroll` (multi-fee), `/enrollments`,
+`/enrollments/<id>/payment|status|razorpay`, `/payments/<id>/refresh|mark-paid`, `/students/<id>/finance|transfer|overview`,
+`/finance/summary`. Handled API errors now roll back the transaction (no half-saved records).
+**Restart Odoo before upgrading.**
