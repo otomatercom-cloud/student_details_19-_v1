@@ -126,7 +126,15 @@ class ResConfigSettings(models.TransientModel):
                                   params={'fields': 'name,status,language', 'limit': 200})
                 td = tr.json()
                 if not tr.ok:
-                    raise UserError(_("Meta: %s", (td.get('error') or {}).get('message', tr.text)[:250]))
+                    err = td.get('error') or {}
+                    if err.get('code') == 100:
+                        return {'type': 'ir.actions.client', 'tag': 'display_notification',
+                                'params': {'title': _("WhatsApp"), 'type': 'warning', 'sticky': True,
+                                           'message': msg + ' ' + _(
+                                               "But the Business Account ID is not a WhatsApp Business "
+                                               "Account (WABA) ID, so templates could not be checked. "
+                                               "Use the WABA ID shown in WhatsApp Manager / API Setup.")}}
+                    raise UserError(_("Meta: %s", err.get('message', tr.text)[:250]))
                 found = {(t['name'], t.get('language')): t.get('status') for t in td.get('data', [])}
                 problems = []
                 for name in names:
