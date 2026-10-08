@@ -1,10 +1,12 @@
+import re
+
 import requests
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 from .attendance_whatsapp import (
-    DEFAULT_ABSENT_MSG, DEFAULT_LATE_MSG, DEFAULT_LOW_MSG, PARAM_PREFIX)
+    DEFAULT_ABSENT_MSG, DEFAULT_LATE_MSG, DEFAULT_LOW_MSG, DEFAULT_MARKS_MSG, PARAM_PREFIX)
 
 REG_PREFIX_KEY = 'student_details.registration.prefix'
 
@@ -81,6 +83,15 @@ class ResConfigSettings(models.TransientModel):
     att_wa_low_message = fields.Char(
         string="Low Attendance Message", default=DEFAULT_LOW_MSG,
         config_parameter=PARAM_PREFIX + 'low_message')
+    att_wa_marks_template = fields.Char(
+        string="Marks template", config_parameter=PARAM_PREFIX + 'marks_template',
+        help="Variables: 1 student, 2 exam - subject, 3 date, 4 marks (e.g. 45 / 50), 5 percentage, 6 result.")
+    att_wa_marks_message = fields.Char(
+        string="Marks Message", default=DEFAULT_MARKS_MSG,
+        config_parameter=PARAM_PREFIX + 'marks_message')
+    att_wa_marks_auto = fields.Boolean(
+        string="Send Marks When Published", config_parameter=PARAM_PREFIX + 'marks_auto',
+        help="Queue the mark message to every parent as soon as a mark sheet is published.")
     att_wa_test_number = fields.Char(string="Test Number")
 
     def _att_wa_form_config(self):
@@ -98,59 +109,74 @@ class ResConfigSettings(models.TransientModel):
             'absent_template': self.att_wa_absent_template or '',
             'late_template': self.att_wa_late_template or '',
             'low_template': self.att_wa_low_template or '',
+            'marks_template': self.att_wa_marks_template or '',
             'country_code': self.att_wa_country_code or '91',
         })
 
     def action_att_wa_check_connection(self):
-        """Verify token/phone ID and (with a Business Account ID) the template names."""
+        """Ask Meta what this token can see (phone, business account, templates)."""
         self.ensure_one()
         cfg = self._att_wa_form_config()
         if not (cfg['meta_phone_id'] and cfg['meta_token']):
             raise UserError(_("Enter the Phone Number ID and Access token first."))
-        base = 'https://graph.facebook.com/%s' % cfg['meta_api_version']
-        headers = {'Authorization': 'Bearer %s' % cfg['meta_token']}
-        try:
-            resp = requests.get('%s/%s' % (base, cfg['meta_phone_id']), headers=headers, timeout=15,
-                                params={'fields': 'display_phone_number,verified_name'},
-                                allow_redirects=False)
-            data = resp.json()
-            if not resp.ok:
-                raise UserError(_("Meta: %s", (data.get('error') or {}).get('message', resp.text)[:250]))
-            msg = _("Connected: %(name)s (%(num)s).", name=data.get('verified_name', ''),
-                    num=data.get('display_phone_number', ''))
-            kind = 'success'
-            names = [n for n in (cfg['absent_template'], cfg['late_template'], cfg['low_template']) if n]
-            if cfg['meta_waba_id'] and names:
-                tr = requests.get('%s/%s/message_templates' % (base, cfg['meta_waba_id']),
-                                  headers=headers, timeout=15, allow_redirects=False,
-                                  params={'fields': 'name,status,language', 'limit': 200})
-                td = tr.json()
-                if not tr.ok:
-                    err = td.get('error') or {}
-                    if err.get('code') == 100:
-                        return {'type': 'ir.actions.client', 'tag': 'display_notification',
-                                'params': {'title': _("WhatsApp"), 'type': 'warning', 'sticky': True,
-                                           'message': msg + ' ' + _(
-                                               "But the Business Account ID is not a WhatsApp Business "
-                                               "Account (WABA) ID, so templates could not be checked. "
-                                               "Use the WABA ID shown in WhatsApp Manager / API Setup.")}}
-                    raise UserError(_("Meta: %s", err.get('message', tr.text)[:250]))
-                found = {(t['name'], t.get('language')): t.get('status') for t in td.get('data', [])}
-                problems = []
-                for name in names:
-                    st = found.get((name, cfg['template_lang']))
-                    if st != 'APPROVED':
-                        problems.append('%s (%s)' % (name, st or 'not found in %s' % cfg['template_lang']))
-                if problems:
-                    msg += ' ' + _("Template problem: %s", ', '.join(problems))
-                    kind = 'warning'
+        base = 'https://graph.facebook.com/%s/' % cfg['meta_api_version']
+        headers = {'Authorization': 'Bearer %s' % cfg['meta_token'].strip()}
+
+        def fetch(path, params=None):
+            try:
+                resp = requests.get(base + path, params=params, headers=headers,
+                                    timeout=15, allow_redirects=False)
+                body = resp.json()
+            except (requests.RequestException, ValueError) as exc:
+                return None, str(exc)[:150]
+            if resp.status_code != 200:
+                return None, (body.get('error') or {}).get('message') or str(resp.status_code)
+            return body, None
+
+        lines, ok = [], True
+        phone, err = fetch(cfg['meta_phone_id'], {'fields': 'display_phone_number,verified_name'})
+        if err:
+            ok = False
+            lines.append(_("Phone Number ID is NOT usable with this token: %s", err))
+        else:
+            lines.append(_("Phone %(num)s (%(name)s) OK.", num=phone.get('display_phone_number'),
+                           name=phone.get('verified_name')))
+        waba = re.sub(r'\D', '', cfg['meta_waba_id'] or '')
+        if waba:
+            numbers, err = fetch(waba + '/phone_numbers', {'fields': 'id,display_phone_number'})
+            if err:
+                ok = False
+                lines.append(_("Cannot read business account %(w)s: %(e)s", w=waba, e=err))
+            else:
+                ids = [n.get('id') for n in numbers.get('data', [])]
+                if cfg['meta_phone_id'] in ids:
+                    lines.append(_("Phone belongs to this business account."))
                 else:
-                    msg += ' ' + _("All templates approved.")
-        except requests.RequestException as exc:
-            raise UserError(_("Could not reach Meta: %s", str(exc)[:200])) from exc
+                    ok = False
+                    lines.append(_("PROBLEM: this phone number is NOT in business account %s.", waba))
+            tpls, err = fetch(waba + '/message_templates',
+                              {'fields': 'name,language,status', 'limit': 200})
+            if err:
+                ok = False
+                lines.append(_("Cannot read templates: %s", err))
+            else:
+                found = {(t['name'], t.get('language')): t.get('status') for t in tpls.get('data', [])}
+                for name in (cfg['absent_template'], cfg['late_template'], cfg['low_template'],
+                         cfg['marks_template']):
+                    if not name:
+                        continue
+                    status = found.get((name, cfg['template_lang']))
+                    if status != 'APPROVED':
+                        ok = False
+                        lines.append(_("Template %(n)s [%(l)s]: %(s)s", n=name, l=cfg['template_lang'],
+                                       s=status or _("not found")))
+                    else:
+                        lines.append(_("Template %s approved.", name))
+        else:
+            lines.append(_("Enter the Business Account ID to also check templates."))
         return {'type': 'ir.actions.client', 'tag': 'display_notification',
-                'params': {'title': _("WhatsApp"), 'message': msg, 'type': kind,
-                           'sticky': kind != 'success'}}
+                'params': {'title': _("WhatsApp connection"), 'message': ' '.join(lines),
+                           'type': 'success' if ok else 'warning', 'sticky': not ok}}
 
     def action_att_wa_test(self):
         """Send a test message using the values currently in the form (unsaved)."""

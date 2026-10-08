@@ -1,6 +1,6 @@
 {
     'name': 'Student Details',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.4.0',
     'summary': 'Collect and manage student details with portal access',
     'sequence': 1,
     'category': 'Education',
@@ -18,6 +18,8 @@
         'views/batch.xml',
         'views/student_attendance_view.xml',
         'views/attendance_whatsapp_views.xml',
+        'views/exam_views.xml',
+        'views/exam_portal_templates.xml',
         'views/student_portal_templates.xml',
         'views/student_attendance_templates.xml',
         'wizard/manage_coordinators_views.xml',

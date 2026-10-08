@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_otm_exam_search" model="ir.ui.view">
+        <field name="name">otm.exam.search</field>
+        <field name="model">otm.exam</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="batch_id"/>
+                <field name="subject"/>
+                <field name="title"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="published" string="Published" domain="[('state', '=', 'published')]"/>
+                <separator/>
+                <filter name="this_month" string="This Month"
+                        domain="[('exam_date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                <separator/>
+                <group>
+                    <filter name="group_batch" string="Batch" context="{'group_by': 'batch_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject'}"/>
+                    <filter name="group_type" string="Exam Type" context="{'group_by': 'exam_type'}"/>
+                    <filter name="group_month" string="Month" context="{'group_by': 'exam_date:month'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_otm_exam_tree" model="ir.ui.view">
+        <field name="name">otm.exam.list</field>
+        <field name="model">otm.exam</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'draft'">
+                <field name="exam_date"/>
+                <field name="title"/>
+                <field name="subject"/>
+                <field name="batch_id"/>
+                <field name="exam_type" optional="hide"/>
+                <field name="max_marks" optional="hide"/>
+                <field name="appeared_count" optional="show"/>
+                <field name="absent_count" optional="show"/>
+                <field name="average_marks" optional="show"/>
+                <field name="pass_percentage" widget="progressbar" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'published'"
+                       decoration-warning="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_otm_exam_form" model="ir.ui.view">
+        <field name="name">otm.exam.form</field>
+        <field name="model">otm.exam</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" string="Publish Marks" type="object"
+                            class="btn-primary" invisible="state != 'draft'"
+                            confirm="Publish and lock these marks?"/>
+                    <button name="action_refresh_students" string="Add New Students" type="object"
+                            invisible="state != 'draft'"/>
+                    <button name="action_send_marks_whatsapp" string="Send Marks to Parents" type="object"
+                            class="btn-primary" invisible="state != 'published'"
+                            confirm="Send each parent their ward's marks on WhatsApp?"/>
+                    <button name="action_print_excel" string="Excel" type="object"/>
+                    <button name="action_unpublish" string="Unlock" type="object" class="btn-warning"
+                            invisible="state != 'published'"
+                            groups="student_details_19.group_student_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_whatsapp_logs" type="object" class="oe_stat_button"
+                                icon="fa-whatsapp" invisible="wa_sent_count == 0">
+                            <field name="wa_sent_count" widget="statinfo" string="WhatsApp Sent"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group string="Exam">
+                            <field name="title" readonly="state == 'published'"/>
+                            <field name="subject" readonly="state == 'published'"/>
+                            <field name="exam_type" readonly="state == 'published'"/>
+                            <field name="batch_id" readonly="state == 'published'"/>
+                            <field name="exam_date" readonly="state == 'published'"/>
+                            <field name="max_marks" readonly="state == 'published'"/>
+                            <field name="pass_marks" readonly="state == 'published'"/>
+                        </group>
+                        <group string="Result Summary">
+                            <field name="coordinator_id" readonly="1"/>
+                            <field name="total_students"/>
+                            <field name="appeared_count"/>
+                            <field name="absent_count"/>
+                            <label for="pass_count" string="Passed / Failed"/>
+                            <div class="o_row"><field name="pass_count"/> / <field name="fail_count"/></div>
+                            <field name="pass_percentage" widget="progressbar"/>
+                            <field name="average_marks"/>
+                            <label for="highest_marks" string="Highest / Lowest"/>
+                            <div class="o_row"><field name="highest_marks"/> / <field name="lowest_marks"/></div>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state == 'published'">
+                        <list editable="bottom" create="0" delete="0"
+                              decoration-danger="result == 'fail'"
+                              decoration-muted="status == 'absent'"
+                              decoration-success="rank == 1 and status == 'appeared'">
+                            <field name="student_id" readonly="1" force_save="1"/>
+                            <field name="roll_no"/>
+                            <field name="status"/>
+                            <field name="marks" readonly="status == 'absent'"/>
+                            <field name="percentage" widget="float" digits="[6,1]"/>
+                            <field name="result" widget="badge"
+                                   decoration-success="result == 'pass'"
+                                   decoration-danger="result == 'fail'"/>
+                            <field name="rank"/>
+                            <field name="remarks"/>
+                        </list>
+                    </field>
+                    <field name="remarks" placeholder="Notes about this exam..." readonly="state == 'published'"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Marks analysis (one row per student per exam) -->
+    <record id="view_otm_exam_line_search" model="ir.ui.view">
+        <field name="name">otm.exam.line.search</field>
+        <field name="model">otm.exam.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="batch_id"/>
+                <field name="subject"/>
+                <field name="roll_no"/>
+                <filter name="published" string="Published" domain="[('exam_state', '=', 'published')]"/>
+                <separator/>
+                <filter name="fail" string="Failed" domain="[('result', '=', 'fail')]"/>
+                <filter name="pass" string="Passed" domain="[('result', '=', 'pass')]"/>
+                <filter name="absent" string="Absent" domain="[('result', '=', 'absent')]"/>
+                <separator/>
+                <group>
+                    <filter name="group_student" string="Student" context="{'group_by': 'student_id'}"/>
+                    <filter name="group_batch" string="Batch" context="{'group_by': 'batch_id'}"/>
+                    <filter name="group_subject" string="Subject" context="{'group_by': 'subject'}"/>
+                    <filter name="group_exam" string="Exam" context="{'group_by': 'exam_id'}"/>
+                    <filter name="group_result" string="Result" context="{'group_by': 'result'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_otm_exam_line_tree" model="ir.ui.view">
+        <field name="name">otm.exam.line.list</field>
+        <field name="model">otm.exam.line</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0"
+                  decoration-danger="result == 'fail'" decoration-muted="status == 'absent'">
+                <field name="exam_date"/>
+                <field name="exam_id"/>
+                <field name="subject"/>
+                <field name="batch_id" optional="hide"/>
+                <field name="student_id"/>
+                <field name="marks"/>
+                <field name="max_marks" optional="show"/>
+                <field name="percentage" digits="[6,1]" avg="Average"/>
+                <field name="result" widget="badge"
+                       decoration-success="result == 'pass'" decoration-danger="result == 'fail'"/>
+                <field name="rank"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_otm_exam_line_pivot" model="ir.ui.view">
+        <field name="name">otm.exam.line.pivot</field>
+        <field name="model">otm.exam.line</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="student_id" type="row"/>
+                <field name="subject" type="col"/>
+                <field name="percentage" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_otm_exam_line_graph" model="ir.ui.view">
+        <field name="name">otm.exam.line.graph</field>
+        <field name="model">otm.exam.line</field>
+        <field name="arch" type="xml">
+            <graph type="bar">
+                <field name="subject"/>
+                <field name="percentage" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_otm_exam" model="ir.actions.act_window">
+        <field name="name">Mark Entry</field>
+        <field name="res_model">otm.exam</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_otm_exam_search"/>
+    </record>
+
+    <record id="action_otm_exam_analysis" model="ir.actions.act_window">
+        <field name="name">Marks Analysis</field>
+        <field name="res_model">otm.exam.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_otm_exam_line_search"/>
+        <field name="context">{'search_default_published': 1}</field>
+    </record>
+
+    <record id="action_student_marks" model="ir.actions.act_window">
+        <field name="name">Student Marks</field>
+        <field name="res_model">otm.exam.line</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="search_view_id" ref="view_otm_exam_line_search"/>
+    </record>
+
+    <record id="menu_otm_marks" model="ir.ui.menu">
+        <field name="name">Marks</field>
+        <field name="parent_id" ref="menu_student_root"/>
+        <field name="sequence">6</field>
+        <field name="action" eval="False"/>
+    </record>
+    <menuitem id="menu_otm_exam" name="Mark Entry" parent="menu_otm_marks"
+              action="action_otm_exam" sequence="10"/>
+    <menuitem id="menu_otm_exam_analysis" name="Marks Analysis" parent="menu_otm_marks"
+              action="action_otm_exam_analysis" sequence="20"/>
+
+    <!-- Student form: marks button -->
+    <record id="view_student_details_form_inherit_marks" model="ir.ui.view">
+        <field name="name">student.details.form.marks</field>
+        <field name="model">student.details</field>
+        <field name="inherit_id" ref="student_details_19.view_student_form_v2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_marks" type="object" class="oe_stat_button"
+                        icon="fa-pencil-square-o" invisible="exam_count == 0">
+                    <field name="exam_count" widget="statinfo" string="Exam Marks"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

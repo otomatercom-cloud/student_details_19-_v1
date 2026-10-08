@@ -128,6 +128,26 @@ class Student(models.Model):
             student.attendance_record_count = (
                 st.get('working_days', 0) + st.get('leave', 0))
 
+    exam_count = fields.Integer("Exam Marks", compute="_compute_exam_count")
+
+    def _compute_exam_count(self):
+        data = self.env['otm.exam.line']._read_group(
+            [('student_id', 'in', self.ids), ('exam_state', '=', 'published')],
+            ['student_id'], ['__count'])
+        mapped = {student.id: count for student, count in data}
+        for student in self:
+            student.exam_count = mapped.get(student.id, 0)
+
+    def action_view_marks(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _("Marks - %s", self.name),
+            'res_model': 'otm.exam.line',
+            'view_mode': 'list,pivot',
+            'domain': [('student_id', '=', self.id), ('exam_state', '=', 'published')],
+        }
+
     def action_view_attendance(self):
         self.ensure_one()
         return {

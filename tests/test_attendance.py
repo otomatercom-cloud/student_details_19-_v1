@@ -171,3 +171,84 @@ class TestAttendance(TransactionCase):
         self.assertEqual(body['template']['name'], 'att_absent')
         self.assertEqual(body['template']['components'][0]['parameters'][0]['text'], 'Anu')
         self.assertEqual(log.state, 'sent')
+
+
+@tagged('post_install', '-at_install')
+class TestExamMarks(TransactionCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.batch = cls.env['student.batch'].create({'name': 'M-Batch'})
+        Student = cls.env['student.details']
+        cls.a = Student.create({'name': 'Asha', 'branch': 'kochi', 'batch_id': cls.batch.id,
+                                'whatsapp_number': '9847000001'})
+        cls.b = Student.create({'name': 'Bijo', 'branch': 'kochi', 'batch_id': cls.batch.id,
+                                'whatsapp_number': '9847000002'})
+        cls.c = Student.create({'name': 'Cinu', 'branch': 'kochi', 'batch_id': cls.batch.id,
+                                'whatsapp_number': '9847000003'})
+        icp = cls.env['ir.config_parameter'].sudo()
+        icp.set_param('student_details.att_wa.enabled', 'True')
+        icp.set_param('student_details.att_wa.provider', 'meta')
+        icp.set_param('student_details.att_wa.meta_phone_id', '123')
+        icp.set_param('student_details.att_wa.meta_token', 'tok')
+        icp.set_param('student_details.att_wa.marks_template', 'student_marks_alert')
+        cls.exam = cls.env['otm.exam'].create({
+            'title': 'Unit Test 1', 'subject': 'Accounting', 'batch_id': cls.batch.id,
+            'max_marks': 50, 'pass_marks': 20})
+
+    def _line(self, student):
+        return self.exam.line_ids.filtered(lambda l: l.student_id == student)
+
+    def test_01_entry_result_rank_stats(self):
+        self.assertEqual(len(self.exam.line_ids), 3)
+        self._line(self.a).marks = 45          # typing marks => appeared
+        self._line(self.b).marks = 10
+        self._line(self.c).status = 'absent'
+        self.assertEqual(self._line(self.a).status, 'appeared')
+        self.assertEqual(self._line(self.a).result, 'pass')
+        self.assertEqual(self._line(self.b).result, 'fail')
+        self.assertEqual(self._line(self.a).percentage, 90.0)
+        self.assertEqual((self._line(self.a).rank, self._line(self.b).rank), (1, 2))
+        self.assertEqual(self.exam.average_marks, 27.5)
+        self.assertEqual((self.exam.pass_count, self.exam.fail_count, self.exam.absent_count), (1, 1, 1))
+
+    def test_02_validation_and_publish_lock(self):
+        with self.assertRaises(Exception), self.cr.savepoint():
+            self._line(self.a).write({'status': 'appeared', 'marks': 99})
+        with self.assertRaises(UserError):          # pending rows block publish
+            self.exam.action_publish()
+        self._line(self.a).marks = 30
+        self._line(self.b).status = 'absent'
+        self._line(self.c).marks = 5
+        self.exam.action_publish()
+        self.assertEqual(self.exam.state, 'published')
+        with self.assertRaises(UserError):
+            self._line(self.a).marks = 40
+        self.exam.action_unpublish()
+        self._line(self.a).marks = 40
+        self.assertEqual(self._line(self.a).marks, 40)
+
+    def test_03_whatsapp_marks_queue_and_resend_on_change(self):
+        Log = self.env['otm.attendance.whatsapp.log']
+        self._line(self.a).marks = 45
+        self._line(self.b).marks = 10
+        self._line(self.c).status = 'absent'
+        self.exam.action_publish()
+        self.exam._queue_marks_whatsapp()
+        logs = Log.search([('exam_id', '=', self.exam.id)])
+        self.assertEqual(len(logs), 3)
+        la = logs.filtered(lambda l: l.student_id == self.a)
+        self.assertIn('45 / 50', la.message)
+        self.assertEqual(la.template_name, 'student_marks_alert')
+        self.assertEqual(__import__('json').loads(la.template_params),
+                         ['Asha', 'Unit Test 1 - Accounting', str(self.exam.exam_date),
+                          '45 / 50', '90.0', 'Pass'])
+        self.assertIn('Absent', logs.filtered(lambda l: l.student_id == self.c).message)
+        self.exam._queue_marks_whatsapp()          # unchanged marks: no duplicates
+        self.assertEqual(Log.search_count([('exam_id', '=', self.exam.id)]), 3)
+        self.exam.action_unpublish()
+        self._line(self.a).marks = 48              # corrected mark: a fresh message
+        self.exam.action_publish()
+        self.exam._queue_marks_whatsapp()
+        self.assertEqual(Log.search_count([('exam_id', '=', self.exam.id)]), 4)  # only the corrected mark is re-sent

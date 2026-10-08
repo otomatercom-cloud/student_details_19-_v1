@@ -28,6 +28,12 @@ DEFAULT_LOW_MSG = (
     "{threshold}%. Kindly ensure regular attendance. - {institute}"
 )
 
+DEFAULT_MARKS_MSG = (
+    "Dear Parent, {student} (Reg: {reg_no}) scored {marks} ({percentage}%) in {exam} - "
+    "{subject} held on {date}. Result: {result}. Rank: {rank}. Class average: {average}. "
+    "- {institute}"
+)
+
 CONFIG_DEFAULTS = {
     'enabled': 'False',
     'provider': 'meta',
@@ -48,6 +54,9 @@ CONFIG_DEFAULTS = {
     'absent_message': DEFAULT_ABSENT_MSG,
     'late_message': DEFAULT_LATE_MSG,
     'low_message': DEFAULT_LOW_MSG,
+    'marks_template': '',
+    'marks_message': DEFAULT_MARKS_MSG,
+    'marks_auto': 'False',
 }
 
 
@@ -71,10 +80,13 @@ class AttendanceWhatsappLog(models.Model):
                                     ondelete='set null')
     line_id = fields.Many2one('st.attendance.line', string="Attendance Line",
                               ondelete='set null')
+    exam_id = fields.Many2one('otm.exam', string="Exam", index=True, ondelete='set null')
+    exam_line_id = fields.Many2one('otm.exam.line', string="Exam Mark Line", ondelete='set null')
     message_type = fields.Selection([
         ('absent', 'Absent Alert'),
         ('late', 'Late Alert'),
         ('low_attendance', 'Low Attendance'),
+        ('marks', 'Marks'),
         ('test', 'Test'),
     ], string="Type", required=True, index=True)
     number = fields.Char(string="WhatsApp Number")
@@ -98,7 +110,7 @@ class AttendanceWhatsappLog(models.Model):
     def _get_config(self, overrides=None):
         icp = self.env['ir.config_parameter'].sudo()
         cfg = {k: icp.get_param(PARAM_PREFIX + k, d) for k, d in CONFIG_DEFAULTS.items()}
-        for key in ('enabled',):
+        for key in ('enabled', 'marks_auto'):
             cfg[key] = str(cfg[key]) == 'True'
         try:
             cfg['low_threshold'] = float(cfg['low_threshold'])
@@ -218,6 +230,52 @@ class AttendanceWhatsappLog(models.Model):
         return self._create_new(vals_list, keys)
 
     @api.model
+    def _queue_for_exam(self, exam):
+        """Queue one marks message per student (re-queued only if the marks changed)."""
+        cfg = self._get_config()
+        if not cfg['enabled']:
+            raise UserError(_("WhatsApp alerts are disabled. Enable them in Registration Settings first."))
+        template_name = cfg['marks_template'] if cfg['provider'] == 'meta' else ''
+        lines = exam.line_ids.filtered(lambda l: l.status in ('appeared', 'absent'))
+        appeared = lines.filtered(lambda l: l.status == 'appeared')
+        average = '%.1f' % exam.average_marks if appeared else '-'
+        vals_list, keys = [], []
+        for line in lines:
+            student = line.student_id
+            if student.att_wa_opt_out:
+                continue
+            absent = line.status == 'absent'
+            marks_txt = 'Absent' if absent else '%g / %g' % (line.marks, exam.max_marks)
+            values = self._student_values(student, exam.batch_id, cfg)
+            values.update({
+                'exam': exam.title, 'subject': exam.subject,
+                'date': fields.Date.to_string(exam.exam_date),
+                'marks': marks_txt,
+                'percentage': '-' if absent else '%.1f' % line.percentage,
+                'result': 'Absent' if absent else ('Pass' if line.result == 'pass' else 'Fail'),
+                'rank': '-' if absent else str(line.rank),
+                'average': average,
+            })
+            key = 'mark:%s:%s:%s' % (line.id, line.status, line.marks)
+            keys.append(key)
+            number = self._guardian_number(student, cfg['country_code'])
+            vals_list.append({
+                'student_id': student.id, 'batch_id': exam.batch_id.id,
+                'exam_id': exam.id, 'exam_line_id': line.id,
+                'message_type': 'marks', 'number': number,
+                'message': render_message(cfg['marks_message'], values),
+                'template_name': template_name,
+                # {{1}} student {{2}} exam - subject {{3}} date {{4}} marks {{5}} % {{6}} result
+                'template_params': json.dumps([
+                    values['student'], '%s - %s' % (exam.title, exam.subject), values['date'],
+                    values['marks'], values['percentage'], values['result']]),
+                'state': 'queued' if number else 'skipped',
+                'error': False if number else _("No valid WhatsApp / phone number on the student."),
+                'dedup_key': key,
+            })
+        return self._create_new(vals_list, keys)
+
+    @api.model
     def _create_new(self, vals_list, keys):
         if not vals_list:
             return self.browse()
@@ -301,8 +359,9 @@ class AttendanceWhatsappLog(models.Model):
             pass
         if not resp.ok:
             err = (data.get('error') or {}).get('message') if isinstance(data, dict) else ''
-            raise UserError(_("Meta API %(code)s: %(msg)s",
-                              code=resp.status_code, msg=(err or resp.text)[:300]))
+            raise UserError(_("Meta API %(code)s: %(msg)s [template '%(t)s', language '%(l)s']",
+                              code=resp.status_code, msg=(err or resp.text)[:250],
+                              t=self.template_name or '-', l=cfg['template_lang']))
         msgs = data.get('messages') or [{}]
         return msgs[0].get('id', 'ok')
 

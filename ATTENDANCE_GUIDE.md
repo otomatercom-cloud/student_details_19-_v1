@@ -15,3 +15,14 @@ Locking a sheet queues one message per absent (optionally late) student to the g
 (whatsapp_number, else father/mother/student phone); a cron sends every 5 min (3 attempts). Low-attendance alerts
 are sent from the report screen (once per student per period). Everything is visible in *Attendance > WhatsApp Log*
 with Retry / Send Now. To use another WhatsApp service, override `otm.attendance.whatsapp.log._dispatch()`.
+
+## Mark Entry & Parent Mark Report (v19.0.1.4.0)
+Student Details > Marks > Exams: create exam (batch, subject, max/pass marks) -> students auto-listed -> enter marks (or tick Absent) -> **Publish Marks** (locks) -> marks go to parents on WhatsApp (or press *Send Marks to Parents*). Coordinators can do the same at `/my/marks`.
+Settings > WhatsApp: set the *Marks template* name + message, and *Auto-send on publish*.
+
+Meta template `student_marks_report` (Utility, English), 6 variables:
+    📝 *Exam Result – {{2}}*
+    Dear Parent, here is the result of *{{1}}* for {{2}} held on {{3}}:
+    🎯 Marks: *{{4}}* ({{5}}%)
+    ✅ Result: *{{6}}*
+    Thank you, Logic School of Management

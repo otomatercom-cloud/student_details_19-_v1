@@ -61,3 +61,9 @@ access_att_wa_log_course,att.wa.log.course,model_otm_attendance_whatsapp_log,stu
 access_att_report_wizard_course,att.report.wizard.course,model_attendance_report_wizard,student_details_19.group_course_coordinator,1,1,1,1
 access_att_report_result_course,att.report.result.course,model_attendance_report_result,student_details_19.group_course_coordinator,1,1,1,1
 access_att_report_result_line_course,att.report.result.line.course,model_attendance_report_result_line,student_details_19.group_course_coordinator,1,1,1,1
+access_otm_exam_manager,otm.exam.manager,model_otm_exam,student_details_19.group_student_manager,1,1,1,1
+access_otm_exam_line_manager,otm.exam.line.manager,model_otm_exam_line,student_details_19.group_student_manager,1,1,1,1
+access_otm_exam_academic,otm.exam.academic,model_otm_exam,student_details_19.group_academic_coordinator,1,1,1,0
+access_otm_exam_line_academic,otm.exam.line.academic,model_otm_exam_line,student_details_19.group_academic_coordinator,1,1,1,0
+access_otm_exam_course,otm.exam.course,model_otm_exam,student_details_19.group_course_coordinator,1,1,1,0
+access_otm_exam_line_course,otm.exam.line.course,model_otm_exam_line,student_details_19.group_course_coordinator,1,1,1,0

@@ -1,5 +1,5 @@
 from odoo import http, fields
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 import base64
 
@@ -213,3 +213,94 @@ class StudentPortal(http.Controller):
             attendance.sudo().action_lock()
         return request.render('student_details_19.portal_attendance_success', {
             'attendance': attendance, 'submitted': locked})
+
+    # ── Marks Portal ─────────────────────────────────────────────────────────
+
+    def _exam_for_user(self, exam_id):
+        try:
+            exam = request.env['otm.exam'].browse(int(exam_id)).exists()
+            exam.check_access('read')
+        except (TypeError, ValueError, AccessError):
+            return request.env['otm.exam']
+        return exam
+
+    @http.route('/my/marks', type='http', auth='user', website=True)
+    def portal_marks(self, **kw):
+        batches = self._attendance_batches()
+        exams = request.env['otm.exam'].search(
+            [('batch_id', 'in', batches.ids)], order='exam_date desc, id desc', limit=40)
+        return request.render('student_details_19.portal_marks_home', {
+            'batches': batches, 'exams': exams, 'today': fields.Date.context_today(exams),
+            'exam_types': request.env['otm.exam']._fields['exam_type'].selection,
+            'error': kw.get('error'),
+        })
+
+    @http.route('/my/marks/new', type='http', auth='user', website=True, methods=['POST'])
+    def portal_marks_new(self, **post):
+        batches = self._attendance_batches()
+        try:
+            batch = batches.filtered(lambda b: b.id == int(post.get('batch_id')))
+            max_marks = float(post.get('max_marks') or 100)
+            pass_marks = float(post.get('pass_marks') or 0)
+            title = (post.get('title') or '').strip()[:100]
+            subject = (post.get('subject') or '').strip()[:100]
+            day = fields.Date.to_date(post.get('exam_date'))
+            exam_type = post.get('exam_type')
+            if not (batch and title and subject and day):
+                raise ValueError('missing')
+            if exam_type not in dict(request.env['otm.exam']._fields['exam_type'].selection):
+                exam_type = 'other'
+            exam = request.env['otm.exam'].create({
+                'batch_id': batch.id, 'title': title, 'subject': subject, 'exam_date': day,
+                'max_marks': max_marks, 'pass_marks': pass_marks, 'exam_type': exam_type,
+                'coordinator_id': request.env.user.id,
+            })
+        except (TypeError, ValueError, AccessError, ValidationError):
+            return request.redirect('/my/marks?error=1')
+        return request.redirect('/my/marks/sheet?exam_id=%s' % exam.id)
+
+    @http.route('/my/marks/sheet', type='http', auth='user', website=True)
+    def portal_marks_sheet(self, exam_id=None, **kw):
+        exam = self._exam_for_user(exam_id)
+        if not exam:
+            return request.redirect('/my/marks')
+        if exam.state == 'draft':
+            exam.action_refresh_students()
+        return request.render('student_details_19.portal_marks_sheet', {
+            'exam': exam, 'error': kw.get('error'),
+        })
+
+    @http.route('/my/marks/save', type='http', auth='user', website=True, methods=['POST'])
+    def portal_marks_save(self, **post):
+        exam = self._exam_for_user(post.get('exam_id'))
+        if not exam:
+            return request.redirect('/my/marks')
+        try:
+            exam.check_access('write')
+        except AccessError:
+            return request.redirect('/my/marks')
+        if exam.state == 'published':
+            return request.redirect('/my/marks/sheet?exam_id=%s' % exam.id)
+        try:
+            for line in exam.line_ids:
+                raw = (post.get('marks_%s' % line.id) or '').strip()
+                absent = post.get('absent_%s' % line.id) == 'on'
+                vals = {'remarks': (post.get('remarks_%s' % line.id) or '').strip()[:200]}
+                if absent:
+                    vals.update(status='absent', marks=0.0)
+                elif raw:
+                    vals.update(status='appeared', marks=float(raw))
+                else:
+                    vals.update(status='pending', marks=0.0)
+                line.sudo().write(vals)
+            if post.get('action') == 'publish':
+                exam.sudo().action_publish()
+        except ValueError:
+            request.env.cr.rollback()
+            return request.redirect('/my/marks/sheet?exam_id=%s&error=Enter+valid+numbers' % exam.id)
+        except (UserError, ValidationError) as exc:
+            request.env.cr.rollback()
+            from urllib.parse import quote_plus
+            return request.redirect('/my/marks/sheet?exam_id=%s&error=%s' % (
+                exam.id, quote_plus(str(exc.args[0])[:200])))
+        return request.redirect('/my/marks/sheet?exam_id=%s&saved=1' % exam.id)

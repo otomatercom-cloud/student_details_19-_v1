@@ -155,3 +155,45 @@ class StudentDetailsBackend(http.Controller):
             row += 1
         wb.close()
         return _xlsx_response(output, 'Attendance_Register_%s_%s_%s.xlsx' % (batch.name, d_from, d_to))
+
+
+class StudentMarksBackend(http.Controller):
+
+    @http.route('/st_marks/report/excel/<model("otm.exam"):exam>', type='http', auth='user')
+    def get_exam_excel(self, exam, **kw):
+        output = io.BytesIO()
+        wb = xlsxwriter.Workbook(output, {'in_memory': True})
+        ws = wb.add_worksheet('Marks')
+        title = wb.add_format({'bold': True, 'font_size': 14})
+        head = wb.add_format({'bold': True, 'align': 'center', 'bg_color': '#1f6f43',
+                              'font_color': 'white', 'border': 1})
+        cell = wb.add_format({'border': 1})
+        num = wb.add_format({'border': 1, 'align': 'center', 'num_format': '0.##'})
+        pct = wb.add_format({'border': 1, 'align': 'center', 'num_format': '0.0'})
+        fail = wb.add_format({'border': 1, 'align': 'center', 'bold': True, 'font_color': '#dc3545'})
+        ok = wb.add_format({'border': 1, 'align': 'center', 'bold': True, 'font_color': '#198754'})
+        ws.write(0, 0, '%s - %s (%s)' % (exam.title, exam.subject, exam.batch_id.name), title)
+        ws.write(1, 0, 'Date: %s | Max: %g | Pass: %g | Average: %.2f | Pass %%: %.1f | Highest: %g' % (
+            exam.exam_date, exam.max_marks, exam.pass_marks, exam.average_marks,
+            exam.pass_percentage, exam.highest_marks))
+        for col, text in enumerate(['Rank', 'Student', 'Register No.', 'Marks', '%', 'Result', 'Remarks']):
+            ws.write(3, col, text, head)
+        ws.set_column(0, 0, 7)
+        ws.set_column(1, 1, 32)
+        ws.set_column(2, 2, 16)
+        ws.set_column(3, 5, 10)
+        ws.set_column(6, 6, 30)
+        row = 4
+        for line in exam.line_ids.sorted(lambda l: (l.status != 'appeared', l.rank or 999, l.student_id.name or '')):
+            appeared = line.status == 'appeared'
+            ws.write(row, 0, line.rank if appeared else '', num)
+            ws.write(row, 1, line.student_id.name, cell)
+            ws.write(row, 2, line.student_id.roll_no or '', cell)
+            ws.write(row, 3, line.marks if appeared else ('AB' if line.status == 'absent' else ''), num)
+            ws.write(row, 4, round(line.percentage, 1) if appeared else '', pct)
+            ws.write(row, 5, {'pass': 'Pass', 'fail': 'Fail', 'absent': 'Absent'}.get(line.result, ''),
+                     ok if line.result == 'pass' else fail if line.result == 'fail' else cell)
+            ws.write(row, 6, line.remarks or '', cell)
+            row += 1
+        wb.close()
+        return _xlsx_response(output, 'Marks_%s_%s.xlsx' % (exam.subject, exam.exam_date))

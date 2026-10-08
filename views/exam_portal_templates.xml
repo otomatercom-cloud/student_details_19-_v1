@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ===================== MARKS HOME ===================== -->
+    <template id="portal_marks_home" name="Marks Home">
+        <t t-call="website.layout">
+            <div class="container py-4 py-md-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                            <h2 class="fw-bold text-success mb-0"><i class="fa fa-pencil-square-o me-2"/>Mark Entry</h2>
+                            <a href="/my/attendance/batches" class="btn btn-outline-secondary rounded-pill btn-sm">Attendance</a>
+                        </div>
+
+                        <div t-if="error" class="alert alert-danger">Please fill all fields correctly (batch, title, subject, date and marks).</div>
+
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-body p-3 p-md-4">
+                                <h5 class="fw-bold mb-3">New Exam / Test</h5>
+                                <form action="/my/marks/new" method="post" class="row g-2">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <div class="col-md-4">
+                                        <select name="batch_id" class="form-select" required="required">
+                                            <option value="">Select batch...</option>
+                                            <t t-foreach="batches" t-as="b"><option t-att-value="b.id"><t t-esc="b.name"/></option></t>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4"><input type="text" name="title" class="form-control" maxlength="100" placeholder="Exam title (e.g. Unit Test 1)" required="required"/></div>
+                                    <div class="col-md-4"><input type="text" name="subject" class="form-control" maxlength="100" placeholder="Subject / paper" required="required"/></div>
+                                    <div class="col-6 col-md-3">
+                                        <select name="exam_type" class="form-select">
+                                            <t t-foreach="exam_types" t-as="t"><option t-att-value="t[0]"><t t-esc="t[1]"/></option></t>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 col-md-3"><input type="date" name="exam_date" class="form-control" t-att-value="today" required="required"/></div>
+                                    <div class="col-6 col-md-2"><input type="number" step="any" min="1" name="max_marks" class="form-control" value="100" placeholder="Max marks"/></div>
+                                    <div class="col-6 col-md-2"><input type="number" step="any" min="0" name="pass_marks" class="form-control" value="40" placeholder="Pass marks"/></div>
+                                    <div class="col-12 col-md-2"><button type="submit" class="btn btn-success w-100 fw-bold">Create</button></div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm border-0 overflow-hidden">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead class="bg-light">
+                                        <tr><th class="ps-4">Date</th><th>Exam</th><th>Batch</th><th class="text-center">Avg</th><th class="text-center">Status</th><th/></tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="exams" t-as="e">
+                                            <tr>
+                                                <td class="ps-4"><t t-esc="e.exam_date" t-options='{"widget": "date"}'/></td>
+                                                <td><div class="fw-bold"><t t-esc="e.title"/></div><small class="text-muted"><t t-esc="e.subject"/></small></td>
+                                                <td><t t-esc="e.batch_id.name"/></td>
+                                                <td class="text-center"><t t-esc="'%.1f' % e.average_marks"/> / <t t-esc="'%g' % e.max_marks"/></td>
+                                                <td class="text-center">
+                                                    <span t-if="e.state == 'published'" class="badge bg-success">Published</span>
+                                                    <span t-else="" class="badge bg-warning text-dark">Draft</span>
+                                                </td>
+                                                <td class="pe-4 text-end"><a t-att-href="'/my/marks/sheet?exam_id=%s' % e.id" class="btn btn-sm btn-outline-primary rounded-pill px-3"><t t-esc="'View' if e.state == 'published' else 'Enter Marks'"/></a></td>
+                                            </tr>
+                                        </t>
+                                        <tr t-if="not exams"><td colspan="6" class="text-center py-5 text-muted">No exams yet. Create one above.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ===================== MARK SHEET ===================== -->
+    <template id="portal_marks_sheet" name="Mark Sheet">
+        <t t-call="website.layout">
+            <t t-set="is_locked" t-value="exam.state == 'published'"/>
+            <div class="container py-4 py-md-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="card shadow-sm border-0 mb-3">
+                            <div class="card-body p-3 p-md-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <div class="text-muted small text-uppercase fw-bold"><t t-esc="exam.batch_id.name"/></div>
+                                    <h3 class="fw-bold text-success mb-0"><t t-esc="exam.title"/> · <t t-esc="exam.subject"/></h3>
+                                </div>
+                                <div class="text-md-end">
+                                    <div class="fw-bold"><i class="fa fa-calendar me-1"/><t t-esc="exam.exam_date" t-options='{"widget": "date"}'/></div>
+                                    <span class="badge bg-info-subtle text-dark border">Max <t t-esc="'%g' % exam.max_marks"/> · Pass <t t-esc="'%g' % exam.pass_marks"/></span>
+                                    <span t-if="is_locked" class="badge bg-secondary"><i class="fa fa-lock me-1"/>Published</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div t-if="error" class="alert alert-danger"><t t-esc="error"/></div>
+                        <div t-if="request.params.get('saved')" class="alert alert-success">Saved.</div>
+
+                        <div t-if="is_locked" class="row g-2 mb-3 text-center">
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h5 mb-0"><t t-esc="'%.1f' % exam.average_marks"/></div><small class="text-muted">Average</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h5 mb-0 text-success"><t t-esc="exam.pass_count"/></div><small class="text-muted">Passed</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h5 mb-0 text-danger"><t t-esc="exam.fail_count"/></div><small class="text-muted">Failed</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h5 mb-0"><t t-esc="'%g' % exam.highest_marks"/></div><small class="text-muted">Highest</small></div></div>
+                        </div>
+
+                        <form method="post" action="/my/marks/save">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="exam_id" t-att-value="exam.id"/>
+                            <div class="card shadow-sm border-0 overflow-hidden">
+                                <div class="list-group list-group-flush">
+                                    <t t-foreach="exam.line_ids.sorted(lambda l: l.student_id.name or '')" t-as="line">
+                                        <div class="list-group-item p-3">
+                                            <div class="row align-items-center g-2">
+                                                <div class="col-md-5">
+                                                    <div class="fw-bold text-dark"><t t-esc="line.student_id.name"/></div>
+                                                    <small class="text-muted"><t t-esc="line.student_id.roll_no or ''"/></small>
+                                                </div>
+                                                <t t-if="is_locked">
+                                                    <div class="col-md-7 text-md-end">
+                                                        <t t-if="line.status == 'absent'"><span class="badge bg-secondary">Absent</span></t>
+                                                        <t t-else="">
+                                                            <span class="fw-bold"><t t-esc="'%g' % line.marks"/> / <t t-esc="'%g' % exam.max_marks"/></span>
+                                                            <span t-attf-class="badge ms-2 #{'bg-success' if line.result == 'pass' else 'bg-danger'}"><t t-esc="'Pass' if line.result == 'pass' else 'Fail'"/></span>
+                                                            <span class="badge bg-light text-dark border ms-1">Rank <t t-esc="line.rank"/></span>
+                                                        </t>
+                                                    </div>
+                                                </t>
+                                                <t t-else="">
+                                                    <div class="col-6 col-md-3">
+                                                        <input type="number" inputmode="decimal" step="any" min="0" t-att-max="exam.max_marks"
+                                                               class="form-control" t-att-name="'marks_%s' % line.id"
+                                                               placeholder="Marks" t-att-value="('%g' % line.marks) if line.status == 'appeared' else ''"/>
+                                                    </div>
+                                                    <div class="col-6 col-md-2">
+                                                        <div class="form-check">
+                                                            <input type="checkbox" class="form-check-input" t-att-id="'ab_%s' % line.id"
+                                                                   t-att-name="'absent_%s' % line.id" t-att-checked="line.status == 'absent'"/>
+                                                            <label class="form-check-label" t-att-for="'ab_%s' % line.id">Absent</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-2">
+                                                        <input type="text" class="form-control form-control-sm" maxlength="200"
+                                                               t-att-name="'remarks_%s' % line.id" placeholder="Remark" t-att-value="line.remarks or ''"/>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap justify-content-center gap-2 mt-4 mb-5">
+                                <a href="/my/marks" class="btn btn-light px-4 rounded-pill fw-bold">Back</a>
+                                <t t-if="not is_locked">
+                                    <button type="submit" name="action" value="draft" class="btn btn-outline-success px-4 rounded-pill fw-bold"><i class="fa fa-save me-1"/>Save Draft</button>
+                                    <button type="submit" name="action" value="publish" class="btn btn-success px-4 rounded-pill fw-bold shadow-sm"
+                                            onclick="return confirm('Publish and lock these marks? Parents may receive them on WhatsApp.');"><i class="fa fa-check me-1"/>Publish Marks</button>
+                                </t>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
