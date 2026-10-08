@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 from odoo import fields
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -251,3 +251,31 @@ class TestExamMarks(TransactionCase):
         self.exam.action_publish()
         self.exam._queue_marks_whatsapp()
         self.assertEqual(Log.search_count([('exam_id', '=', self.exam.id)]), 4)  # only the corrected mark is re-sent
+
+
+@tagged('post_install', '-at_install')
+class TestMultiFeeEnrollment(TransactionCase):
+
+    def test_01_admission_plus_lumpsum(self):
+        batch = self.env['student.batch'].create({'name': 'Fee-Batch'})
+        FS = self.env['fee.structure']
+        adm = FS.create({'name': 'Admission', 'fee_type': 'admission', 'gst_rate': '0',
+                         'amount_entry_mode': 'inclusive', 'amount_inclusive': 1000, 'batch_ids': [(6, 0, batch.ids)]})
+        lump = FS.create({'name': 'Lump', 'fee_type': 'lumpsum', 'gst_rate': '0',
+                          'amount_entry_mode': 'inclusive', 'amount_inclusive': 20000, 'batch_ids': [(6, 0, batch.ids)]})
+        lump2 = FS.create({'name': 'Lump2', 'fee_type': 'lumpsum', 'gst_rate': '0',
+                           'amount_entry_mode': 'inclusive', 'amount_inclusive': 15000, 'batch_ids': [(6, 0, batch.ids)]})
+        st = self.env['student.details'].create({'name': 'Fee Student', 'branch': 'kochi'})
+        wiz = self.env['enrollment.wizard'].create({
+            'student_id': st.id, 'batch_id': batch.id, 'fee_structure_ids': [(6, 0, (adm | lump).ids)]})
+        self.assertEqual(wiz.grand_total_display, 21000.0)
+        self.assertIn('Admission', wiz.fee_breakdown)
+        wiz.action_confirm_enrollment()
+        enr = self.env['student.enrollment'].search([('student_id', '=', st.id)])
+        self.assertEqual(enr.total_fee, 21000.0)
+        self.assertEqual(enr.fee_structure_ids, adm | lump)
+        self.assertEqual(enr.fee_structure_id, lump)
+        self.assertEqual(enr.due_amount, 21000.0)
+        with self.assertRaises(ValidationError):   # two package fees are not allowed
+            self.env['enrollment.wizard'].create({
+                'student_id': st.id, 'batch_id': batch.id, 'fee_structure_ids': [(6, 0, (lump | lump2).ids)]})

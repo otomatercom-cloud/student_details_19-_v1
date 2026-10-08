@@ -12,7 +12,10 @@ class StudentEnrollment(models.Model):
 
     student_id      = fields.Many2one('student.details', required=True, ondelete='cascade', index=True)
     batch_id        = fields.Many2one('student.batch', required=True, string='Batch')
-    fee_structure_id= fields.Many2one('fee.structure', string='Fee Structure')
+    fee_structure_id= fields.Many2one('fee.structure', string='Main Fee Structure')
+    fee_structure_ids = fields.Many2many(
+        'fee.structure', 'student_enrollment_fee_rel', 'enrollment_id', 'fee_id',
+        string='Fees (Admission, Lump Sum, ...)')
     enrollment_date = fields.Date(default=fields.Date.today, string='Enrollment Date')
     status          = fields.Selection([
         ('enrolled', 'Enrolled'),
@@ -60,14 +63,16 @@ class StudentEnrollment(models.Model):
             else:
                 rec.payment_status = 'partial'
 
-    @api.depends('fee_structure_id', 'fee_structure_id.installment_ids.due_date',
-                 'payment_ids.amount')
+    @api.depends('fee_structure_id', 'fee_structure_ids',
+                 'fee_structure_id.installment_ids.due_date',
+                 'fee_structure_ids.installment_ids.due_date', 'payment_ids.amount')
     def _compute_next_due(self):
         for rec in self:
-            if not rec.fee_structure_id or rec.due_amount <= 0:
+            structures = rec.fee_structure_ids | rec.fee_structure_id
+            if not structures or rec.due_amount <= 0:
                 rec.next_due_date = False
                 continue
-            installments = rec.fee_structure_id.installment_ids.sorted('due_date')
+            installments = structures.installment_ids.sorted('due_date')
             today = fields.Date.today()
             upcoming = installments.filtered(lambda l: l.due_date and l.due_date >= today)
             rec.next_due_date = upcoming[0].due_date if upcoming else False

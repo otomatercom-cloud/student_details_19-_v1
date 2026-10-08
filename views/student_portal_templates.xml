@@ -65,395 +65,282 @@
     </template>
 
 
-    <!-- ======================== STUDENT FORM PAGE ======================== -->
+<!-- ======================== STUDENT FORM PAGE ======================== -->
     <template id="portal_student_form" name="New Student Form">
         <t t-call="website.layout">
-            <div class="container py-5">
+            <style>
+                .sr-wrap { background: linear-gradient(180deg,#f3f7f5 0%,#ffffff 60%); }
+                .sr-hero { background: linear-gradient(135deg,#0b6b4a,#14a06f); color:#fff; border-radius:18px; }
+                .sr-card { background:#fff; border:1px solid #e3ebe7; border-radius:16px; box-shadow:0 4px 18px rgba(16,60,44,.06); }
+                .sr-title { display:flex; align-items:center; gap:.75rem; font-weight:700; color:#0b4f38; margin-bottom:1.25rem; }
+                .sr-num { width:34px; height:34px; border-radius:50%; background:#0b6b4a; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:.95rem; flex:none; }
+                .sr-card .form-control, .sr-card .form-select { border-radius:10px; border-color:#d5dfda; }
+                .sr-card .form-control:focus, .sr-card .form-select:focus { border-color:#14a06f; box-shadow:0 0 0 .2rem rgba(20,160,111,.15); }
+                .sr-course { border:1.5px solid #dbe5e0; border-radius:12px; padding:.75rem 1rem .75rem 2.4rem; background:#fafcfb; transition:all .15s; position:relative; }
+                .sr-course:hover { border-color:#14a06f; background:#f1faf6; }
+                .sr-course:has(input:checked) { border-color:#0b6b4a; background:#e6f6ee; }
+                .sr-hint { font-size:.8rem; color:#6b7c75; }
+                .sr-wa { background:#f0fbf5; border:1px dashed #14a06f; border-radius:12px; padding:1rem; }
+            </style>
+            <div class="sr-wrap py-4 py-md-5">
+            <div class="container">
                 <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="card shadow-lg border-0 rounded-lg overflow-hidden">
-                            <div class="card-header bg-success text-white text-center py-4">
-                                <h2 class="fw-bold mb-0">Student Registration</h2>
-                                <p class="mb-0 opacity-75">Please fill in your details accurately</p>
+                    <div class="col-lg-9 col-xl-8">
+
+                        <div class="sr-hero text-center p-4 p-md-5 mb-4 shadow-sm">
+                            <div class="mb-2"><i class="fa fa-graduation-cap fa-2x"/></div>
+                            <h2 class="fw-bold mb-1">Student Registration</h2>
+                            <p class="mb-0 opacity-75">Please fill in the details accurately. Fields marked <span class="fw-bold">*</span> are mandatory.</p>
+                        </div>
+
+                        <form id="student_form" method="post" action="/my/students/details/review"
+                              enctype="multipart/form-data" novalidate="novalidate">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                            <div t-if="request.params.get('error') == 'whatsapp'" class="alert alert-danger">
+                                <i class="fa fa-exclamation-triangle me-1"/> Parent's WhatsApp number is mandatory. Please enter a valid number.
                             </div>
-                            <div class="card-body p-5 bg-light">
-                                <form id="student_form" method="post" action="/my/students/details/review"
-                                      enctype="multipart/form-data">
-                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
-                                    <!-- Personal Details -->
-                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
-                                        <h5 class="text-success border-bottom pb-2 mb-4">
-                                            <i class="fa fa-user me-2"/>
-                                            Personal Details
-                                        </h5>
-                                        <div class="row g-3">
-                                            <div class="col-md-12">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="name" id="name" class="form-control"
-                                                           placeholder="Full Name" required="true"/>
-                                                    <label for="name">Full Name</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="date" name="date_of_birth" id="dob"
-                                                           class="form-control" placeholder="Date of Birth"
-                                                           required="true"/>
-                                                    <label for="dob">Date of Birth</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <select name="gender" id="gender" class="form-select">
-                                                        <option value="female">Female</option>
-                                                        <option value="male">Male</option>
-                                                        <option value="other">Other</option>
-                                                    </select>
-                                                    <label for="gender">Gender</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <div class="form-floating mb-3">
-                                                    <select name="branch" id="branch" class="form-select"
-                                                            required="true">
-                                                        <option value="" disabled="disabled" selected="selected">Select
-                                                            Branch
-                                                        </option>
-                                                        <option value="kochi">Kochi</option>
-                                                        <option value="calicut">Calicut</option>
-                                                        <option value="kottayam">Kottayam</option>
-                                                        <option value="trivandrum">Trivandrum</option>
-                                                        <option value="malappuram">Malappuram</option>
-                                                        <option value="kozhikode">Kozhikode</option>
-                                                        <option value="online">Online</option>
-                                                    </select>
-                                                    <label for="branch">Branch</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <div class="form-floating mb-3">
-                                                    <select name="joining_status" id="joining_status"
-                                                            class="form-select" required="true"
-                                                            onchange="toggleAdmissionOfficer()">
-                                                        <option value="new">New Student</option>
-                                                        <option value="existing">Existing Student</option>
-                                                    </select>
-                                                    <label for="joining_status">Joining Status</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-12" id="admission_officer_div" style="display: none;">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="admission_officer_text"
-                                                           id="admission_officer_text" class="form-control"
-                                                           placeholder="Admission Officer Name"/>
-                                                    <label for="admission_officer_text">Admission Officer Name</label>
-                                                </div>
-                                            </div>
-                                            <script>
-                                                function toggleAdmissionOfficer() {
-                                                var status = document.getElementById("joining_status").value;
-                                                var officerDiv = document.getElementById("admission_officer_div");
-                                                if (status === 'new') {
-                                                officerDiv.style.display = 'block';
-                                                } else {
-                                                officerDiv.style.display = 'none';
-                                                document.getElementById("admission_officer_text").value = '';
-                                                }
-                                                }
-                                                // Run on load
-                                                window.addEventListener('DOMContentLoaded', (event) => {
-                                                toggleAdmissionOfficer();
-                                                });
-                                            </script>
-                                            <div class="col-md-12">
-                                                <div class="mb-3">
-                                                    <label for="photo" class="form-label text-muted small fw-bold ms-1">
-                                                        Upload Passport Size Photo
-                                                        <span class="text-danger">*</span>
-                                                    </label>
-                                                    <input type="file" name="photo" id="photo" accept="image/*"
-                                                           class="form-control form-control-lg" required="true"/>
-                                                    <div class="form-text ms-1">Recommended size: 413 × 531 px</div>
-                                                </div>
-                                            </div>
+                            <!-- 1. Personal -->
+                            <div class="sr-card p-4 mb-4">
+                                <div class="sr-title"><span class="sr-num">1</span><span class="fs-5">Personal Details</span></div>
+                                <div class="row g-3">
+                                    <div class="col-12"><div class="form-floating">
+<input type="text" name="name" id="name" class="form-control" placeholder="Full Name" required="required" />
+<label for="name">Full Name <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="date" name="date_of_birth" id="date_of_birth" class="form-control" placeholder="Date of Birth" required="required" />
+<label for="date_of_birth">Date of Birth <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select name="gender" id="gender" class="form-select">
+                                                <option value="female">Female</option>
+                                                <option value="male">Male</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                            <label for="gender">Gender</label>
                                         </div>
                                     </div>
-
-                                    <!-- Contact Details -->
-                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
-                                        <h5 class="text-success border-bottom pb-2 mb-4"><i
-                                                class="fa fa-address-card me-2"/>Contact Details
-                                        </h5>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="email" name="email" id="email" class="form-control"
-                                                           placeholder="name@example.com" required="true"/>
-                                                    <label for="email">Email Address</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="tel" name="phone" id="phone" class="form-control"
-                                                           placeholder="Phone Number" required="true"/>
-                                                    <label for="phone">Phone Number</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <select name="district" id="district" class="form-select"
-                                                            required="true">
-                                                        <option value="" disabled="disabled" selected="selected">Select
-                                                            District
-                                                        </option>
-                                                        <option value="Alappuzha">Alappuzha</option>
-                                                        <option value="Ernakulam">Ernakulam</option>
-                                                        <option value="Idukki">Idukki</option>
-                                                        <option value="Kannur">Kannur</option>
-                                                        <option value="Kasaragod">Kasaragod</option>
-                                                        <option value="Kollam">Kollam</option>
-                                                        <option value="Kottayam">Kottayam</option>
-                                                        <option value="Kozhikode">Kozhikode</option>
-                                                        <option value="Malappuram">Malappuram</option>
-                                                        <option value="Palakkad">Palakkad</option>
-                                                        <option value="Pathanamthitta">Pathanamthitta</option>
-                                                        <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-                                                        <option value="Thrissur">Thrissur</option>
-                                                        <option value="Wayanad">Wayanad</option>
-                                                    </select>
-                                                    <label for="district">District</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="city" id="city" class="form-control"
-                                                           placeholder="City"/>
-                                                    <label for="city">City</label>
-                                                </div>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select name="branch" id="branch" class="form-select" required="required">
+                                                
+<option value="" disabled="disabled" selected="selected">Select Branch </option>
+<option value="kochi">Kochi</option>
+<option value="calicut">Calicut</option>
+<option value="kottayam">Kottayam</option>
+<option value="trivandrum">Trivandrum</option>
+<option value="malappuram">Malappuram</option>
+<option value="kozhikode">Kozhikode</option>
+<option value="online">Online</option>
+</select>
+                                            <label for="branch">Branch <span class="text-danger">*</span></label>
                                         </div>
                                     </div>
-
-                                    <!-- Academic Details -->
-                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
-                                        <h5 class="text-success border-bottom pb-2 mb-4"><i
-                                                class="fa fa-graduation-cap me-2"/>Academic Details
-                                        </h5>
-                                        <div class="row g-3">
-                                            <div class="col-md-12">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="qualification" id="qualification"
-                                                           class="form-control" placeholder="Highest Qualification"
-                                                           required="true"/>
-                                                    <label for="qualification">Highest Qualification</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="school" id="school" class="form-control"
-                                                           placeholder="Previous School Name" required="true"/>
-                                                    <label for="school">Previous School Name</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="college" id="college" class="form-control"
-                                                           placeholder="Previous College Name" required="true"/>
-                                                    <label for="college">Previous College Name</label>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-12" id="course_section">
-                                                <label class="form-label text-muted small fw-bold ms-1 mb-2">
-                                                    Select Courses of Interest
-                                                    <span class="text-danger">*</span>
-                                                </label>
-
-                                                <div class="row g-2">
-                                                    <t t-foreach="courses" t-as="course">
-                                                        <div class="col-md-6">
-                                                            <div class="form-check p-3 border rounded bg-light hover-shadow transition position-relative">
-                                                                <input type="checkbox"
-                                                                       class="form-check-input course-checkbox"
-                                                                       name="course_ids[]"
-                                                                       t-att-value="course.id"
-                                                                       t-att-id="'course_%s' % course.id"/>
-                                                                <label class="form-check-label w-100 stretched-link"
-                                                                       t-att-for="'course_%s' % course.id"
-                                                                       t-esc="course.name"/>
-                                                            </div>
-                                                        </div>
-                                                    </t>
-                                                </div>
-                                            </div>
-
-                                            <!-- Batch Selection -->
-                                            <div class="col-md-12 mb-3">
-                                                <label class="form-label text-muted small fw-bold ms-1">Select Batch
-                                                    <span class="text-danger">*</span>
-                                                </label>
-                                                <select name="batch_id" id="batch_id" class="form-select form-select-lg"
-                                                        required="true">
-                                                    <option value="">-- Select Batch --</option>
-                                                    <t t-foreach="batches" t-as="batch">
-                                                        <option t-att-value="batch.id" t-esc="batch.name"/>
-                                                    </t>
-                                                </select>
-                                            </div>
-
-
-                                            <!-- Error message -->
-                                            <small class="text-danger d-none" id="course_error">
-                                                Please select at least one course.
-                                            </small>
-                                        </div>
-
-                                        <script>
-                                            (function() {
-                                            function attachValidation() {
-                                            const form = document.getElementById('student_form');
-                                            if (!form) return;
-
-                                            const checkboxes = document.querySelectorAll('.course-checkbox');
-                                            const error = document.getElementById('course_error');
-                                            const section = document.getElementById('course_section');
-
-                                            function validateCourses() {
-                                            return Array.from(checkboxes).some(cb => cb.checked);
-                                            }
-
-                                            // Remove existing listener to avoid duplicates if re-run
-                                            form.removeEventListener('submit', handleFormSubmit);
-                                            form.addEventListener('submit', handleFormSubmit);
-
-                                            function handleFormSubmit(e) {
-                                            if (!validateCourses()) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            if(error) error.classList.remove('d-none');
-                                            if(section) section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            }
-                                            }
-
-                                            checkboxes.forEach(cb => {
-                                            cb.addEventListener('change', function () {
-                                            if (validateCourses() &amp;&amp; error) {
-                                            error.classList.add('d-none');
-                                            }
-                                            });
-                                            });
-                                            }
-
-                                            // Run on load
-                                            if (document.readyState === 'loading') {
-                                            document.addEventListener('DOMContentLoaded', attachValidation);
-                                            } else {
-                                            attachValidation();
-                                            }
-                                            })();
-                                        </script>
-
-                                        <!--                                        <div class="col-md-12">-->
-                                        <!--                                            <label class="form-label text-muted small fw-bold ms-1 mb-2">Select Courses of Interest</label>-->
-                                        <!--                                            <div class="row g-2">-->
-                                        <!--                                                <t t-foreach="courses" t-as="course">-->
-                                        <!--                                                    <div class="col-md-6">-->
-                                        <!--                                                        <div class="form-check p-3 border rounded bg-light hover-shadow transition position-relative">-->
-                                        <!--                                                            <input type="checkbox" class="form-check-input" name="course_ids" t-att-value="course.id" id="course_#{course.id}" />-->
-                                        <!--                                                            <label class="form-check-label w-100 stretched-link" t-att-for="'course_%s' % course.id" t-esc="course.name"/>-->
-                                        <!--                                                        </div>-->
-                                        <!--                                                    </div>-->
-                                        <!--                                                </t>-->
-                                        <!--                                            </div>-->
-                                        <!--                                        </div>-->
-                                        <!--                                    </div>-->
-                                    </div>
-
-                                    <!-- Guardian Details -->
-                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
-                                        <h5 class="text-success border-bottom pb-2 mb-4">
-                                            <i class="fa fa-users me-2"/>
-                                            Guardian Details
-                                        </h5>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="father_name" id="father_name"
-                                                           class="form-control" placeholder="Father Name"
-                                                           required="true"/>
-                                                    <label for="father_name">Father's Name</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="father_phone" id="father_phone"
-                                                           class="form-control" placeholder="Father Phone"
-                                                           required="true"/>
-                                                    <label for="father_phone">Father's Phone</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="mother_name" id="mother_name"
-                                                           class="form-control" placeholder="Mother Name"
-                                                           required="true"/>
-                                                    <label for="mother_name">Mother's Name</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="mother_phone" id="mother_phone"
-                                                           class="form-control" placeholder="Mother Phone"
-                                                           required="true"/>
-                                                    <label for="mother_phone">Mother's Phone</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3">
-                                                    <input type="text" name="whatsapp_number" id="whatsapp_number"
-                                                           class="form-control" placeholder="Whatsapp Number"
-                                                           required="true"/>
-                                                    <label for="whatsapp_number">Whatsapp Number (Father/Mother)</label>
-                                                </div>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select name="joining_status" id="joining_status" class="form-select" required="required" onchange="toggleAdmissionOfficer()">
+                                                <option value="new">New Student</option>
+                                                <option value="existing">Existing Student</option>
+                                            </select>
+                                            <label for="joining_status">Joining Status</label>
                                         </div>
                                     </div>
+                                    <div class="col-12" id="admission_officer_div" style="display:none;">
+                                        <div class="form-floating">
+<input type="text" name="admission_officer_text" id="admission_officer_text" class="form-control" placeholder="Admission Officer Name" />
+<label for="admission_officer_text">Admission Officer Name</label>
+</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="photo" class="form-label fw-semibold small text-muted">Passport Size Photo <span class="text-danger">*</span></label>
+                                        <input type="file" name="photo" id="photo" accept="image/*" class="form-control" required="required"/>
+                                        <div class="sr-hint mt-1">Recommended size: 413 × 531 px</div>
+                                    </div>
+                                </div>
+                                <script>
+                                    function toggleAdmissionOfficer() {
+                                        var s = document.getElementById("joining_status");
+                                        var d = document.getElementById("admission_officer_div");
+                                        if (!s || !d) return;
+                                        if (s.value === 'new') { d.style.display = 'block'; }
+                                        else { d.style.display = 'none'; document.getElementById("admission_officer_text").value = ''; }
+                                    }
+                                    window.addEventListener('DOMContentLoaded', toggleAdmissionOfficer);
+                                </script>
+                            </div>
 
-                                    <!-- Social Media -->
-                                    <div class="bg-white p-4 rounded shadow-sm mb-4">
-                                        <h5 class="text-success border-bottom pb-2 mb-4"><i
-                                                class="fa fa-share-alt me-2"/>Social Media
-                                        </h5>
-                                        <div class="row g-3">
-                                            <div class="col-md-12">
-                                                <div class="input-group input-group-lg">
-                                                    <span class="input-group-text bg-light border-end-0">
-                                                        <i class="fa fa-instagram text-danger"/>
-                                                    </span>
-                                                    <div class="form-floating flex-grow-1">
-                                                        <input type="text" name="insta_id" id="insta_id"
-                                                               class="form-control border-start-0 ps-0"
-                                                               placeholder="Instagram ID"/>
-                                                        <label for="insta_id">Instagram ID</label>
+                            <!-- 2. Contact -->
+                            <div class="sr-card p-4 mb-4">
+                                <div class="sr-title"><span class="sr-num">2</span><span class="fs-5">Contact Details</span></div>
+                                <div class="row g-3">
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="email" name="email" id="email" class="form-control" placeholder="Email Address" required="required" />
+<label for="email">Email Address <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="tel" name="phone" id="phone" class="form-control" placeholder="Student Phone Number" required="required" pattern="[0-9+ ]{10,15}" inputmode="tel" title="Enter a valid 10-digit mobile number"/>
+<label for="phone">Student Phone Number <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select name="district" id="district" class="form-select" required="required">
+<option value="" disabled="disabled" selected="selected">Select District </option>
+<option value="Alappuzha">Alappuzha</option>
+<option value="Ernakulam">Ernakulam</option>
+<option value="Idukki">Idukki</option>
+<option value="Kannur">Kannur</option>
+<option value="Kasaragod">Kasaragod</option>
+<option value="Kollam">Kollam</option>
+<option value="Kottayam">Kottayam</option>
+<option value="Kozhikode">Kozhikode</option>
+<option value="Malappuram">Malappuram</option>
+<option value="Palakkad">Palakkad</option>
+<option value="Pathanamthitta">Pathanamthitta</option>
+<option value="Thiruvananthapuram">Thiruvananthapuram</option>
+<option value="Thrissur">Thrissur</option>
+<option value="Wayanad">Wayanad</option>
+</select>
+                                            <label for="district">District <span class="text-danger">*</span></label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="text" name="city" id="city" class="form-control" placeholder="City" />
+<label for="city">City</label>
+</div></div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Academic -->
+                            <div class="sr-card p-4 mb-4">
+                                <div class="sr-title"><span class="sr-num">3</span><span class="fs-5">Academic Details</span></div>
+                                <div class="row g-3">
+                                    <div class="col-12"><div class="form-floating">
+<input type="text" name="qualification" id="qualification" class="form-control" placeholder="Highest Qualification" required="required" />
+<label for="qualification">Highest Qualification <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="text" name="school" id="school" class="form-control" placeholder="Previous School Name" required="required" />
+<label for="school">Previous School Name <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="text" name="college" id="college" class="form-control" placeholder="Previous College Name" required="required" />
+<label for="college">Previous College Name <span class="text-danger">*</span></label>
+</div></div>
+
+                                    <div class="col-12" id="course_section">
+                                        <label class="form-label fw-semibold small text-muted">Course Name <span class="text-danger">*</span></label>
+                                        <div class="row g-2">
+                                            <t t-foreach="courses" t-as="course">
+                                                <div class="col-md-6">
+                                                    <div class="sr-course form-check">
+                                                        <input type="checkbox" class="form-check-input course-checkbox ms-0 position-absolute" style="left:.9rem;top:1rem;"
+                                                               name="course_ids[]" t-att-value="course.id" t-att-id="'course_%s' % course.id"/>
+                                                        <label class="form-check-label w-100 stretched-link" t-att-for="'course_%s' % course.id" t-esc="course.name"/>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </t>
                                         </div>
+                                        <small class="text-danger d-none" id="course_error">Please select the course name.</small>
                                     </div>
 
-                                    <div class="text-center mt-5">
-                                        <button type="submit"
-                                                class="btn btn-success btn-lg px-5 py-3 shadow-sm rounded-pill w-50 fw-bold text-uppercase letter-spacing-1">
-                                            Next Step
-                                            <i class="fa fa-arrow-right ms-2"/>
-                                        </button>
+                                    <div class="col-12">
+                                        <div class="form-floating">
+                                            <select name="batch_id" id="batch_id" class="form-select" required="required">
+                                                <option value="">-- Select Batch --</option>
+                                                <t t-foreach="batches" t-as="batch"><option t-att-value="batch.id" t-esc="batch.name"/></t>
+                                            </select>
+                                            <label for="batch_id">Batch <span class="text-danger">*</span></label>
+                                        </div>
                                     </div>
-                                </form>
+                                </div>
                             </div>
-                        </div>
+
+                            <!-- 4. Guardian -->
+                            <div class="sr-card p-4 mb-4">
+                                <div class="sr-title"><span class="sr-num">4</span><span class="fs-5">Parent / Guardian Details</span></div>
+                                <div class="row g-3">
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="text" name="father_name" id="father_name" class="form-control" placeholder="Father's Name" required="required" />
+<label for="father_name">Father's Name <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="tel" name="father_phone" id="father_phone" class="form-control" placeholder="Father's Phone" required="required" pattern="[0-9+ ]{10,15}" inputmode="tel" title="Enter a valid 10-digit mobile number"/>
+<label for="father_phone">Father's Phone <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="text" name="mother_name" id="mother_name" class="form-control" placeholder="Mother's Name" required="required" />
+<label for="mother_name">Mother's Name <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-md-6"><div class="form-floating">
+<input type="tel" name="mother_phone" id="mother_phone" class="form-control" placeholder="Mother's Phone" required="required" pattern="[0-9+ ]{10,15}" inputmode="tel" title="Enter a valid 10-digit mobile number"/>
+<label for="mother_phone">Mother's Phone <span class="text-danger">*</span></label>
+</div></div>
+                                    <div class="col-12">
+                                        <div class="sr-wa">
+                                            <div class="fw-semibold text-success mb-2"><i class="fa fa-whatsapp me-1"/>Parent's WhatsApp Number <span class="text-danger">*</span></div>
+                                            <div class="form-floating">
+                                                <input type="tel" name="whatsapp_number" id="whatsapp_number" class="form-control"
+                                                       placeholder="Parent's WhatsApp Number" required="required"
+                                                       pattern="[0-9+ ]{10,15}" inputmode="tel" title="Enter a valid WhatsApp number (10 digits)"/>
+                                                <label for="whatsapp_number">Parent's WhatsApp Number (Father / Mother)</label>
+                                            </div>
+                                            <div class="sr-hint mt-2">Attendance and exam result updates will be sent to this number.</div>
+                                            <small class="text-danger d-none" id="wa_error">Please enter a valid parent WhatsApp number (10-15 digits).</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Social -->
+                            <div class="sr-card p-4 mb-4">
+                                <div class="sr-title"><span class="sr-num">5</span><span class="fs-5">Social Media <small class="text-muted fw-normal">(optional)</small></span></div>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fa fa-instagram text-danger"/></span>
+                                    <div class="form-floating flex-grow-1">
+                                        <input type="text" name="insta_id" id="insta_id" class="form-control" placeholder="Instagram ID"/>
+                                        <label for="insta_id">Instagram ID</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-4 mb-2">
+                                <button type="submit" class="btn btn-success btn-lg px-5 py-3 shadow rounded-pill fw-bold">
+                                    Next Step <i class="fa fa-arrow-right ms-2"/>
+                                </button>
+                                <div class="sr-hint mt-2">You can review everything before final submission.</div>
+                            </div>
+                        </form>
+
+                        <script>
+                            (function () {
+                                var form = document.getElementById('student_form');
+                                if (!form) return;
+                                form.addEventListener('submit', function (e) {
+                                    var ok = true;
+                                    var courses = form.querySelectorAll('.course-checkbox');
+                                    var cerr = document.getElementById('course_error');
+                                    if (courses.length &amp;&amp; !Array.from(courses).some(function (c) { return c.checked; })) {
+                                        ok = false; if (cerr) cerr.classList.remove('d-none');
+                                        document.getElementById('course_section').scrollIntoView({behavior: 'smooth', block: 'center'});
+                                    } else if (cerr) { cerr.classList.add('d-none'); }
+                                    var wa = document.getElementById('whatsapp_number');
+                                    var werr = document.getElementById('wa_error');
+                                    var digits = (wa.value || '').replace(/\D/g, '');
+                                    if (digits.length &lt; 10 || digits.length &gt; 15) {
+                                        ok = false; werr.classList.remove('d-none'); wa.classList.add('is-invalid');
+                                        if (courses.length &amp;&amp; ok === false &amp;&amp; cerr &amp;&amp; cerr.classList.contains('d-none')) wa.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                    } else { werr.classList.add('d-none'); wa.classList.remove('is-invalid'); }
+                                    if (!ok) { e.preventDefault(); e.stopPropagation(); return; }
+                                    if (!form.checkValidity()) { e.preventDefault(); form.reportValidity(); }
+                                });
+                            })();
+                        </script>
                     </div>
                 </div>
+            </div>
             </div>
         </t>
     </template>
@@ -594,7 +481,7 @@
                                                 </span>
                                             </div>
                                             <div class="col-md-12 border-bottom pb-2">
-                                                <strong>Selected Course:</strong>
+                                                <strong>Course Name:</strong>
                                                 <span class="d-block text-success fw-bold">
                                                     <t t-esc="student.get('course_name')"/>
                                                 </span>

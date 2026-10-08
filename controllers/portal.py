@@ -2,11 +2,17 @@ from odoo import http, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 import base64
+import re
 
 from ..models.student_attendance1 import ATT_STATUSES
 
 
 class StudentPortal(http.Controller):
+
+    @staticmethod
+    def _valid_whatsapp(value):
+        digits = re.sub(r'\D', '', value or '')
+        return 10 <= len(digits) <= 15
 
     @http.route('/students/policy', type='http', auth='public', website=True)
     def portal_student_policy(self, **kw):
@@ -24,6 +30,8 @@ class StudentPortal(http.Controller):
     @http.route('/my/students/details/review', type='http', auth='public',
                 website=True, methods=['POST'])
     def portal_student_review(self, **post):
+        if not self._valid_whatsapp(post.get('whatsapp_number')):
+            return request.redirect('/my/students/details?error=whatsapp')
         photo_file = request.httprequest.files.get('photo')
         if photo_file:
             raw_bytes = photo_file.read()
@@ -54,6 +62,8 @@ class StudentPortal(http.Controller):
     @http.route('/my/students/details/submit', type='http', auth='public',
                 website=True, methods=['POST'])
     def portal_student_submit(self, **post):
+        if not self._valid_whatsapp(post.get('whatsapp_number')):
+            return request.redirect('/my/students/details?error=whatsapp')
         photo_binary = request.session.get('uploaded_photo', False)
         course_ids = request.httprequest.form.getlist('course_ids')
         batch_id = post.get('batch_id')
