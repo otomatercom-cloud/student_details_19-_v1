@@ -31,7 +31,7 @@ class ManageCoordinators(models.TransientModel):
         coordinator_type = self.env.context.get('default_coordinator_type')
         group = self._get_group(coordinator_type)
         if group:
-            res['user_ids'] = [(6, 0, group.users.ids)]
+            res['user_ids'] = [(6, 0, group.user_ids.ids)]
         return res
 
     def action_save(self):
@@ -39,7 +39,7 @@ class ManageCoordinators(models.TransientModel):
         group = self._get_group(self.coordinator_type)
         if not group:
             raise UserError(_('Valid coordinator type not selected.'))
-        group.write({'users': [(6, 0, self.user_ids.ids)]})
+        group.write({'user_ids': [(6, 0, self.user_ids.ids)]})
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
