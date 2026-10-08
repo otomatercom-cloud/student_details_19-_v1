@@ -1,15 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-    <!-- List View -->
+    <!-- ============ Attendance sheet: search ============ -->
+    <record id="view_st_attendance_search" model="ir.ui.view">
+        <field name="name">st.attendance.search</field>
+        <field name="model">st.attendance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="batch_id"/>
+                <field name="coordinator_id"/>
+                <field name="topic"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="locked" string="Locked" domain="[('state', '=', 'locked')]"/>
+                <separator/>
+                <filter name="today" string="Today"
+                        domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="this_month" string="This Month"
+                        domain="[('date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                <filter name="has_absent" string="Has Absentees" domain="[('absent_count', '&gt;', 0)]"/>
+                <separator/>
+                <group>
+                    <filter name="group_batch" string="Batch" context="{'group_by': 'batch_id'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'date:day'}"/>
+                    <filter name="group_month" string="Month" context="{'group_by': 'date:month'}"/>
+                    <filter name="group_session" string="Session" context="{'group_by': 'session'}"/>
+                    <filter name="group_coordinator" string="Taken By" context="{'group_by': 'coordinator_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============ Attendance sheet: list ============ -->
     <record id="view_st_attendance_tree" model="ir.ui.view">
         <field name="name">st.attendance.list</field>
         <field name="model">st.attendance</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-muted="state == 'draft'">
                 <field name="date"/>
+                <field name="session"/>
                 <field name="batch_id"/>
-                <field name="coordinator_id"/>
+                <field name="coordinator_id" optional="show"/>
+                <field name="total_students" optional="show"/>
+                <field name="present_count" sum="Present" optional="show"/>
+                <field name="late_count" sum="Late" optional="show"/>
+                <field name="absent_count" sum="Absent" decoration-danger="absent_count &gt; 0"/>
+                <field name="leave_count" optional="hide"/>
+                <field name="attendance_rate" avg="Average" widget="progressbar" optional="show"/>
                 <field name="state" widget="badge"
                        decoration-success="state == 'locked'"
                        decoration-warning="state == 'draft'"/>
@@ -17,56 +54,213 @@
         </field>
     </record>
 
-    <!-- Form View -->
+    <!-- ============ Attendance sheet: form ============ -->
     <record id="view_st_attendance_form" model="ir.ui.view">
         <field name="name">st.attendance.form</field>
         <field name="model">st.attendance</field>
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_print_excel" string="Print Excel"
-                            type="object" class="btn-primary"/>
-                    <button name="action_unlock" string="Unlock"
-                            type="object" class="btn-warning"
+                    <button name="action_lock" string="Submit &amp; Lock" type="object"
+                            class="btn-primary" invisible="state != 'draft'"
+                            confirm="Lock this attendance? Guardians of absent students may be notified on WhatsApp."/>
+                    <button name="action_mark_all_present" string="Mark All Present" type="object"
+                            invisible="state != 'draft'"/>
+                    <button name="action_refresh_students" string="Add New Students" type="object"
+                            invisible="state != 'draft'"/>
+                    <button name="action_send_whatsapp_absentees" string="Send WhatsApp Alerts" type="object"
                             invisible="state != 'locked'"/>
+                    <button name="action_print_excel" string="Excel" type="object"/>
+                    <button name="action_unlock" string="Unlock" type="object" class="btn-warning"
+                            invisible="state != 'locked'"
+                            groups="student_details_19.group_student_manager"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,locked"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_whatsapp_logs" type="object" class="oe_stat_button"
+                                icon="fa-whatsapp" invisible="wa_message_count == 0">
+                            <field name="wa_message_count" widget="statinfo" string="WhatsApp Sent"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
                     <group>
-                        <field name="date"/>
-                        <field name="coordinator_id" readonly="1"/>
-                        <field name="batch_id"/>
+                        <group string="Class">
+                            <field name="batch_id" readonly="state == 'locked'"/>
+                            <field name="date" readonly="state == 'locked'"/>
+                            <field name="session" readonly="state == 'locked'"/>
+                            <field name="topic" readonly="state == 'locked'"/>
+                        </group>
+                        <group string="Summary">
+                            <field name="coordinator_id" readonly="1"/>
+                            <field name="total_students"/>
+                            <label for="present_count" string="Present / Late / Half"/>
+                            <div class="o_row">
+                                <field name="present_count"/> /
+                                <field name="late_count"/> /
+                                <field name="half_day_count"/>
+                            </div>
+                            <label for="absent_count" string="Absent / On Leave"/>
+                            <div class="o_row">
+                                <field name="absent_count" decoration-danger="absent_count &gt; 0"/> /
+                                <field name="leave_count"/>
+                            </div>
+                            <field name="attendance_rate" widget="progressbar"/>
+                            <field name="locked_by" invisible="state != 'locked'"/>
+                            <field name="locked_on" invisible="state != 'locked'"/>
+                        </group>
                     </group>
-                    <field name="attendance_line_ids">
-                        <list create="0" delete="0" editable="bottom">
+                    <field name="attendance_line_ids" readonly="state == 'locked'">
+                        <list editable="bottom" create="0" delete="0"
+                              decoration-danger="status == 'absent'"
+                              decoration-warning="status in ('late', 'half_day')"
+                              decoration-info="status == 'leave'">
                             <field name="student_id" readonly="1" force_save="1"/>
-                            <field name="status" readonly="parent.state == 'locked'"/>
+                            <field name="roll_no"/>
+                            <field name="status"/>
+                            <field name="remarks"/>
                         </list>
                     </field>
+                    <field name="remarks" placeholder="Notes about this session..." readonly="state == 'locked'"/>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
 
-    <!-- Attendance Summary page inherited into Student form -->
+    <record id="view_st_attendance_pivot" model="ir.ui.view">
+        <field name="name">st.attendance.pivot</field>
+        <field name="model">st.attendance</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="batch_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="attendance_rate" type="measure"/>
+                <field name="absent_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_st_attendance_graph" model="ir.ui.view">
+        <field name="name">st.attendance.graph</field>
+        <field name="model">st.attendance</field>
+        <field name="arch" type="xml">
+            <graph type="line">
+                <field name="date" interval="day"/>
+                <field name="attendance_rate" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ============ Attendance lines (analysis) ============ -->
+    <record id="view_st_attendance_line_search" model="ir.ui.view">
+        <field name="name">st.attendance.line.search</field>
+        <field name="model">st.attendance.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="student_id"/>
+                <field name="batch_id"/>
+                <field name="roll_no"/>
+                <filter name="locked" string="Locked Sheets" domain="[('attendance_state', '=', 'locked')]"/>
+                <separator/>
+                <filter name="absent" string="Absent" domain="[('status', '=', 'absent')]"/>
+                <filter name="late" string="Late" domain="[('status', '=', 'late')]"/>
+                <filter name="half_day" string="Half Day" domain="[('status', '=', 'half_day')]"/>
+                <filter name="leave" string="On Leave" domain="[('status', '=', 'leave')]"/>
+                <separator/>
+                <filter name="today" string="Today"
+                        domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="this_month" string="This Month"
+                        domain="[('date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                <separator/>
+                <group>
+                    <filter name="group_student" string="Student" context="{'group_by': 'student_id'}"/>
+                    <filter name="group_batch" string="Batch" context="{'group_by': 'batch_id'}"/>
+                    <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                    <filter name="group_month" string="Month" context="{'group_by': 'date:month'}"/>
+                    <filter name="group_day" string="Day" context="{'group_by': 'date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_st_attendance_line_tree" model="ir.ui.view">
+        <field name="name">st.attendance.line.list</field>
+        <field name="model">st.attendance.line</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0"
+                  decoration-danger="status == 'absent'"
+                  decoration-warning="status in ('late', 'half_day')"
+                  decoration-info="status == 'leave'">
+                <field name="date"/>
+                <field name="session"/>
+                <field name="batch_id"/>
+                <field name="student_id"/>
+                <field name="roll_no" optional="hide"/>
+                <field name="status" widget="badge"/>
+                <field name="remarks"/>
+                <field name="attendance_state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_st_attendance_line_pivot" model="ir.ui.view">
+        <field name="name">st.attendance.line.pivot</field>
+        <field name="model">st.attendance.line</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="student_id" type="row"/>
+                <field name="status" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_st_attendance_line_graph" model="ir.ui.view">
+        <field name="name">st.attendance.line.graph</field>
+        <field name="model">st.attendance.line</field>
+        <field name="arch" type="xml">
+            <graph type="bar" stacked="1">
+                <field name="batch_id"/>
+                <field name="status"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ============ Student form: attendance ============ -->
     <record id="view_student_details_form_inherit_attendance" model="ir.ui.view">
         <field name="name">student.details.form.attendance.summary</field>
         <field name="model">student.details</field>
         <field name="inherit_id" ref="student_details_19.view_student_form_v2"/>
         <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_attendance" type="object" class="oe_stat_button"
+                        icon="fa-calendar-check-o" invisible="attendance_record_count == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="overall_attendance" nolabel="1" widget="float" digits="[6,1]"/>%
+                        </span>
+                        <span class="o_stat_text">Attendance</span>
+                    </div>
+                </button>
+            </xpath>
             <xpath expr="//sheet/notebook" position="inside">
                 <page string="Attendance Summary" name="attendance_summary">
                     <group>
-                        <group>
+                        <group string="Period">
                             <field name="att_start_date"/>
                             <field name="att_end_date"/>
+                            <field name="att_wa_opt_out"/>
                         </group>
-                        <group>
+                        <group string="Result">
                             <field name="present_days" readonly="1"/>
-                            <field name="absent_days" readonly="1"/>
+                            <field name="late_days" readonly="1"/>
                             <field name="half_days" readonly="1"/>
+                            <field name="absent_days" readonly="1"/>
+                            <field name="leave_days" readonly="1"/>
                             <field name="total_days" readonly="1"/>
-                            <field name="attendance_percentage" readonly="1"/>
+                            <field name="attendance_percentage" readonly="1" digits="[6,1]"/>
                         </group>
                     </group>
                 </page>
@@ -74,14 +268,23 @@
         </field>
     </record>
 
-    <!-- Action -->
+    <!-- ============ Actions ============ -->
     <record id="action_st_attendance" model="ir.actions.act_window">
         <field name="name">Attendance</field>
         <field name="res_model">st.attendance</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_st_attendance_search"/>
     </record>
 
-    <!-- Menu: "Attendance" is a folder; records + report are its children -->
+    <record id="action_st_attendance_analysis" model="ir.actions.act_window">
+        <field name="name">Attendance Analysis</field>
+        <field name="res_model">st.attendance.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_st_attendance_line_search"/>
+        <field name="context">{'search_default_locked': 1, 'search_default_this_month': 1}</field>
+    </record>
+
+    <!-- ============ Menus ============ -->
     <record id="menu_st_attendance" model="ir.ui.menu">
         <field name="name">Attendance</field>
         <field name="parent_id" ref="menu_student_root"/>
@@ -90,5 +293,7 @@
     </record>
     <menuitem id="menu_st_attendance_records" name="Attendance Records"
               parent="menu_st_attendance" action="action_st_attendance" sequence="10"/>
+    <menuitem id="menu_st_attendance_analysis" name="Attendance Analysis"
+              parent="menu_st_attendance" action="action_st_attendance_analysis" sequence="15"/>
 
 </odoo>

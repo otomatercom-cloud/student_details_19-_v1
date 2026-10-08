@@ -59,6 +59,46 @@
                             <field name="razorpay_webhook_secret" password="True"/>
                         </group>
                     </group>
+                    <div class="oe_title" style="margin-top:24px;">
+                        <h1>Attendance WhatsApp Alerts</h1>
+                        <p class="text-muted">
+                            Guardians receive a WhatsApp message when their child is marked absent
+                            (optionally late) and when attendance falls below the minimum. Messages are
+                            queued and sent within minutes; see Attendance &gt; WhatsApp Log.
+                            Placeholders: {student} {reg_no} {batch} {date} {session} {institute}
+                            {percentage} {threshold} {date_from} {date_to}.
+                        </p>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="att_wa_enabled"/>
+                            <field name="att_wa_provider"/>
+                            <field name="att_wa_notify_scope"/>
+                            <field name="att_wa_low_threshold"/>
+                            <field name="att_wa_country_code"/>
+                            <field name="att_wa_institute_name"/>
+                        </group>
+                        <group>
+                            <field name="att_wa_gateway_url" invisible="att_wa_provider != 'gateway'"/>
+                            <field name="att_wa_gateway_token" password="True" invisible="att_wa_provider != 'gateway'"/>
+                            <field name="att_wa_meta_phone_id" invisible="att_wa_provider != 'meta'"/>
+                            <field name="att_wa_meta_token" password="True" invisible="att_wa_provider != 'meta'"/>
+                            <field name="att_wa_meta_api_version" invisible="att_wa_provider != 'meta'"/>
+                            <field name="att_wa_use_template" invisible="att_wa_provider != 'meta'"/>
+                            <field name="att_wa_template_lang" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
+                            <field name="att_wa_absent_template" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
+                            <field name="att_wa_late_template" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
+                            <field name="att_wa_low_template" invisible="att_wa_provider != 'meta' or not att_wa_use_template"/>
+                            <field name="att_wa_test_number" placeholder="e.g. 9876543210"/>
+                            <button name="action_att_wa_test" type="object"
+                                    string="Send Test Message" class="btn-secondary"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="att_wa_absent_message"/>
+                        <field name="att_wa_late_message"/>
+                        <field name="att_wa_low_message"/>
+                    </group>
                 <div class="oe_title" style="margin-top:24px;">
                         <h1>Demo Data</h1>
                         <p class="text-muted">

@@ -5,16 +5,40 @@
         <field name="name">attendance.report.result.form</field>
         <field name="model">attendance.report.result</field>
         <field name="arch" type="xml">
-            <form string="Attendance Report">
+            <form string="Attendance Report" create="0" edit="0">
+                <header>
+                    <button name="action_export_excel" type="object" string="Download Excel Register"
+                            class="btn-primary"/>
+                    <button name="action_send_low_attendance_whatsapp" type="object"
+                            string="WhatsApp Low-Attendance Alerts" invisible="low_count == 0"
+                            confirm="Send a WhatsApp alert to the guardians of every student below the minimum?"/>
+                </header>
                 <sheet>
+                    <div class="oe_title">
+                        <h1><field name="batch_id"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                        <group>
+                            <field name="threshold"/>
+                            <field name="low_count" decoration-danger="low_count &gt; 0"/>
+                        </group>
+                    </group>
                     <field name="line_ids">
-                        <list>
+                        <list decoration-danger="is_low">
                             <field name="student_id"/>
-                            <field name="present_days" string="Present"/>
-                            <field name="absent_days" string="Absent"/>
-                            <field name="half_days" string="Half Day"/>
+                            <field name="roll_no"/>
+                            <field name="present_days" string="Present" sum="Present"/>
+                            <field name="late_days" string="Late"/>
+                            <field name="half_days" string="Half"/>
+                            <field name="absent_days" string="Absent" sum="Absent"/>
+                            <field name="leave_days" string="Leave"/>
                             <field name="total_days" string="Total"/>
-                            <field name="attendance_percentage" string="%" digits="[6,1]"/>
+                            <field name="attendance_percentage" string="%" digits="[6,1]" widget="progressbar"/>
+                            <field name="is_low" column_invisible="1"/>
                         </list>
                     </field>
                 </sheet>
@@ -31,6 +55,7 @@
                     <field name="batch_id"/>
                     <field name="start_date"/>
                     <field name="end_date"/>
+                    <field name="threshold"/>
                 </group>
                 <footer>
                     <button name="action_generate_report" type="object"

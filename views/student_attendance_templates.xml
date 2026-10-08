@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-    <!-- 
-        ===================================================================
-        PAGE: MY BATCHES (Selection)
-        =================================================================== 
-    -->
+    <!-- ===================== MY BATCHES ===================== -->
     <template id="portal_attendance_batches" name="My Batches">
         <t t-call="website.layout">
-            <div class="container py-5">
+            <div class="container py-4 py-md-5">
                 <div class="row justify-content-center">
                     <div class="col-lg-10">
-                        <div class="d-flex justify-content-between align-items-center mb-5">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
                             <h2 class="fw-bold text-success mb-0"><i class="fa fa-users me-2"/>My Batches</h2>
-                            <span class="badge bg-light text-dark border p-2">Select a batch to take attendance</span>
+                            <span class="badge bg-light text-dark border p-2">
+                                <i class="fa fa-calendar me-1"/><t t-esc="today" t-options='{"widget": "date"}'/>
+                            </span>
                         </div>
-                        
+
                         <div class="row g-4">
                             <t t-foreach="batches" t-as="batch">
+                                <t t-set="sheets" t-value="today_by_batch.get(batch.id)"/>
                                 <div class="col-md-6">
-                                    <div class="card h-100 shadow border-0 hover-shadow transition">
+                                    <div class="card h-100 shadow-sm border-0">
                                         <div class="card-body p-4">
                                             <div class="d-flex align-items-center mb-3">
                                                 <div class="bg-success-subtle p-3 rounded-circle me-3">
@@ -27,29 +26,49 @@
                                                 </div>
                                                 <div>
                                                     <h4 class="fw-bold mb-1 text-dark"><t t-esc="batch.name"/></h4>
-                                                    <p class="text-muted small mb-0"><i class="fa fa-calendar me-1"/> <t t-esc="batch.start_date"/> to <t t-esc="batch.end_date"/></p>
+                                                    <p class="text-muted small mb-0">
+                                                        <i class="fa fa-user-graduate me-1"/>
+                                                        <span class="fw-bold" t-esc="len(batch.student_ids)"/> students
+                                                    </p>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="d-flex justify-content-between align-items-center mt-4">
-                                                <div class="text-muted small">
-                                                    <i class="fa fa-user-graduate me-1"/> <span class="fw-bold"><t t-esc="len(batch.student_ids)"/></span> Students
-                                                </div>
-                                                <a t-att-href="'/my/attendance/take?batch_id=%s' % batch.id" class="btn btn-outline-success rounded-pill fw-bold px-4">
-                                                    Take Attendance <i class="fa fa-arrow-right ms-2"/>
-                                                </a>
-                                                <a t-att-href="'/my/attendance/history?batch_id=%s' % batch.id" class="btn btn-outline-primary rounded-pill fw-bold px-4 ms-2">
-                                                    View History <i class="fa fa-clock-o ms-2"/>
-                                                </a>
+
+                                            <div class="mb-3 small">
+                                                <t t-if="sheets">
+                                                    <t t-foreach="sheets" t-as="sheet">
+                                                        <span t-attf-class="badge me-1 #{'bg-success' if sheet.state == 'locked' else 'bg-warning text-dark'}">
+                                                            <t t-esc="dict(sheet._fields['session'].selection).get(sheet.session)"/>:
+                                                            <t t-if="sheet.state == 'locked'"><t t-esc="'%.0f' % sheet.attendance_rate"/>% · <t t-esc="sheet.absent_count"/> absent</t>
+                                                            <t t-else="">draft</t>
+                                                        </span>
+                                                    </t>
+                                                </t>
+                                                <span t-else="" class="badge bg-light text-muted border">Not taken today</span>
                                             </div>
+
+                                            <form action="/my/attendance/take" method="get" class="d-flex flex-wrap gap-2">
+                                                <input type="hidden" name="batch_id" t-att-value="batch.id"/>
+                                                <select name="session" class="form-select form-select-sm w-auto rounded-pill">
+                                                    <option value="full_day">Full Day</option>
+                                                    <option value="morning">Morning</option>
+                                                    <option value="afternoon">Afternoon</option>
+                                                    <option value="evening">Evening</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-success rounded-pill fw-bold px-4">
+                                                    Take Attendance <i class="fa fa-arrow-right ms-1"/>
+                                                </button>
+                                                <a t-att-href="'/my/attendance/history?batch_id=%s' % batch.id"
+                                                   class="btn btn-outline-primary rounded-pill fw-bold px-3">
+                                                    History <i class="fa fa-clock-o ms-1"/>
+                                                </a>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             </t>
-                            
+
                             <t t-if="not batches">
                                 <div class="col-12 text-center py-5">
-                                    <img src="/web/static/img/smiling_face.svg" height="100" class="mb-3 opacity-50" style="filter: grayscale(1);"/>
                                     <h4 class="text-muted">No Batches Assigned</h4>
                                     <p class="text-muted small">You are not listed as a coordinator for any active batches.</p>
                                 </div>
@@ -61,260 +80,233 @@
         </t>
     </template>
 
-
-    <!-- 
-        ===================================================================
-        PAGE: TAKE ATTENDANCE SHEET
-        =================================================================== 
-    -->
+    <!-- ===================== ATTENDANCE SHEET ===================== -->
     <template id="portal_attendance_sheet" name="Take Attendance">
         <t t-call="website.layout">
-            <div class="container py-5">
+            <t t-set="is_locked" t-value="attendance.state == 'locked'"/>
+            <div class="container py-4 py-md-5">
                 <div class="row justify-content-center">
                     <div class="col-lg-10">
-                        
-                        <!-- Header -->
-                        <div class="card shadow-sm border-0 rounded mb-4">
-                            <div class="card-body p-4 d-flex justify-content-between align-items-center">
+
+                        <div class="card shadow-sm border-0 mb-3">
+                            <div class="card-body p-3 p-md-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                                 <div>
-                                    <h5 class="text-muted small text-uppercase fw-bold mb-1">Taking Attendance For</h5>
+                                    <div class="text-muted small text-uppercase fw-bold">Attendance for</div>
                                     <h3 class="fw-bold text-success mb-0"><t t-esc="batch.name"/></h3>
                                 </div>
-                                <div class="text-end">
-                                    <h5 class="text-muted small text-uppercase fw-bold mb-1">Date</h5>
-                                    <h4 class="fw-bold text-dark mb-0"><t t-esc="attendance.date"/></h4>
+                                <div class="text-md-end">
+                                    <div class="fw-bold text-dark">
+                                        <i class="fa fa-calendar me-1"/><t t-esc="attendance.date" t-options='{"widget": "date"}'/>
+                                    </div>
+                                    <span class="badge bg-info-subtle text-dark border mt-1">
+                                        <t t-esc="sessions.get(attendance.session)"/>
+                                    </span>
+                                    <span t-if="is_locked" class="badge bg-secondary mt-1"><i class="fa fa-lock me-1"/>Locked</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- LOCKED STATE -->
-                        <t t-if="attendance.state == 'locked'">
-                            <div class="alert alert-warning border-0 shadow-sm p-4 mb-4 text-center">
-                                <i class="fa fa-lock fa-3x text-warning mb-3"/>
-                                <h4 class="fw-bold text-dark">Attendance Locked</h4>
-                                <p class="text-muted mb-0">This attendance record has been finalized and locked. Please contact the administrator to unlock it.</p>
-                            </div>
-                            <!-- Readonly View of Attendance -->
-                             <div class="card shadow border-0 rounded overflow-hidden">
-                                <div class="list-group list-group-flush">
-                                    <t t-foreach="attendance.attendance_line_ids" t-as="line">
-                                        <div class="list-group-item p-3 item-row opacity-75">
-                                            <div class="row align-items-center">
-                                                <div class="col-md-6 d-flex align-items-center">
-                                                     <div class="avatar rounded-circle bg-light d-flex align-items-center justify-content-center me-3" 
-                                                         style="width: 48px; height: 48px; min-width: 48px;">
-                                                         <t t-if="line.student_id.photo">
-                                                            <img t-att-src="'/web/image/student.details/%s/photo' % line.student_id.id" 
-                                                                 class="rounded-circle w-100 h-100 object-fit-cover"/>
-                                                         </t>
-                                                         <t t-else="">
-                                                            <i class="fa fa-user text-secondary"/>
-                                                         </t>
-                                                    </div>
-                                                    <div>
-                                                        <h5 class="mb-0 fw-bold text-dark"><t t-esc="line.student_id.name"/></h5>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 text-end">
-                                                    <span t-if="line.status == 'present'" class="badge bg-success">Present</span>
-                                                    <span t-if="line.status == 'half_day'" class="badge bg-warning">Half</span>
-                                                    <span t-if="line.status == 'absent'" class="badge bg-danger">Absent</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </t>
-                                </div>
-                             </div>
-                             
-                             <div class="text-center mt-5">
-                                <a href="/my/attendance/batches" class="btn btn-outline-secondary px-5 py-3 rounded-pill fw-bold">
-                                    <i class="fa fa-arrow-left me-2"/> Back to Batches
-                                </a>
-                            </div>
-                        </t>
+                        <!-- Live summary -->
+                        <div class="row g-2 mb-3 text-center" id="att_summary">
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h4 mb-0 text-success" data-count="present">0</div><small class="text-muted">Present</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h4 mb-0" style="color:#fd7e14" data-count="late">0</div><small class="text-muted">Late</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h4 mb-0 text-warning" data-count="half_day">0</div><small class="text-muted">Half</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h4 mb-0 text-danger" data-count="absent">0</div><small class="text-muted">Absent</small></div></div>
+                            <div class="col"><div class="card border-0 shadow-sm py-2"><div class="h4 mb-0 text-primary" data-count="leave">0</div><small class="text-muted">Leave</small></div></div>
+                        </div>
 
-                        <!-- ACTIVE STATE -->
-                        <form t-else="" method="post" action="/my/attendance/save">
+                        <div t-if="is_locked" class="alert alert-warning border-0 shadow-sm">
+                            <i class="fa fa-lock me-2"/>This attendance is finalized and locked. Ask a manager to unlock it for changes.
+                        </div>
+
+                        <form method="post" action="/my/attendance/save" id="att_form">
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <input type="hidden" name="attendance_id" t-att-value="attendance.id"/>
 
-                            <div class="card shadow border-0 rounded overflow-hidden">
-                                <div class="card-header bg-light py-3 border-bottom">
-                                    <div class="row fw-bold text-uppercase small text-muted align-items-center">
-                                        <div class="col-6 ps-4">Student Name</div>
-                                        <div class="col-6 text-center">Status</div>
-                                    </div>
-                                </div>
+                            <div class="mb-3" t-if="not is_locked">
+                                <input type="text" name="topic" class="form-control" maxlength="200"
+                                       placeholder="Topic / subject taught (optional)"
+                                       t-att-value="attendance.topic or ''"/>
+                            </div>
+                            <div class="mb-3 text-muted" t-elif="attendance.topic">
+                                <i class="fa fa-book me-1"/><t t-esc="attendance.topic"/>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 mb-3" t-if="not is_locked">
+                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill" onclick="attMarkAll('present')">All Present</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="attMarkAll('absent')">All Absent</button>
+                            </div>
+
+                            <div class="card shadow-sm border-0 overflow-hidden">
                                 <div class="list-group list-group-flush">
-                                    <t t-foreach="attendance.attendance_line_ids" t-as="line">
-                                        <div class="list-group-item p-3 item-row">
-                                            <div class="row align-items-center">
-                                                <div class="col-md-6 d-flex align-items-center">
-                                                    <div class="avatar rounded-circle bg-light d-flex align-items-center justify-content-center me-3" 
-                                                         style="width: 48px; height: 48px; min-width: 48px;">
-                                                         <t t-if="line.student_id.photo">
-                                                            <img t-att-src="'/web/image/student.details/%s/photo' % line.student_id.id" 
-                                                                 class="rounded-circle w-100 h-100 object-fit-cover"/>
-                                                         </t>
-                                                         <t t-else="">
-                                                            <i class="fa fa-user text-secondary"/>
-                                                         </t>
+                                    <t t-foreach="attendance.attendance_line_ids.sorted(lambda l: l.student_id.name or '')" t-as="line">
+                                        <div class="list-group-item p-3">
+                                            <div class="row align-items-center g-2">
+                                                <div class="col-md-4 d-flex align-items-center">
+                                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3"
+                                                         style="width:44px;height:44px;min-width:44px;overflow:hidden;">
+                                                        <img t-if="line.student_id.photo"
+                                                             t-att-src="'/web/image/student.details/%s/photo/96x96' % line.student_id.id"
+                                                             class="w-100 h-100" style="object-fit:cover;"/>
+                                                        <i t-else="" class="fa fa-user text-secondary"/>
                                                     </div>
                                                     <div>
-                                                        <h5 class="mb-0 fw-bold text-dark"><t t-esc="line.student_id.name"/></h5>
-                                                        <small class="text-muted"><t t-esc="line.student_id.roll_no or 'No Roll No'"/></small>
+                                                        <div class="fw-bold text-dark"><t t-esc="line.student_id.name"/></div>
+                                                        <small class="text-muted"><t t-esc="line.student_id.roll_no or ''"/></small>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6 mt-3 mt-md-0 d-flex justify-content-center justify-content-md-center">
-                                                    
-                                                    <!-- Custom Radio Toggle -->
-                                                    <div class="btn-group w-75" role="group">
-                                                        <input type="radio" 
-                                                               class="btn-check" 
-                                                               t-att-name="'status_%s' % line.id" 
-                                                               t-att-id="'present_%s' % line.id" 
-                                                               value="present" 
-                                                               t-att-checked="line.status == 'present'"/>
-                                                        <label class="btn btn-outline-success py-2 fw-bold" t-att-for="'present_%s' % line.id">
-                                                            <i class="fa fa-check-circle me-2"/>Present
-                                                        </label>
-
-                                                        <!-- Half Day -->
-                                                        <input type="radio" class="btn-check"
-                                                               t-att-name="'status_%s' % line.id"
-                                                               t-att-id="'half_day_%s' % line.id"
-                                                               value="half_day"
-                                                               t-att-checked="line.status == 'half_day'"/>
-                                                        <label class="btn btn-outline-warning py-2 fw-bold text-dark"
-                                                               t-att-for="'half_day_%s' % line.id">
-                                                            <i class="fa fa-adjust me-2"/>Half Day
-                                                        </label>
-                                                    
-                                                        <input type="radio" 
-                                                               class="btn-check" 
-                                                               t-att-name="'status_%s' % line.id" 
-                                                               t-att-id="'absent_%s' % line.id" 
-                                                               value="absent" 
-                                                               t-att-checked="line.status == 'absent'"/>
-                                                        <label class="btn btn-outline-danger py-2 fw-bold" t-att-for="'absent_%s' % line.id">
-                                                            <i class="fa fa-times-circle me-2"/>Absent
-                                                        </label>
+                                                <div class="col-md-8">
+                                                    <div class="btn-group flex-wrap w-100 att-status-group" role="group">
+                                                        <t t-foreach="[('present','Present','success'),('late','Late','warning'),('half_day','Half','secondary'),('absent','Absent','danger'),('leave','Leave','primary')]" t-as="opt">
+                                                            <input type="radio" class="btn-check att-radio"
+                                                                   t-att-name="'status_%s' % line.id"
+                                                                   t-att-id="'%s_%s' % (opt[0], line.id)"
+                                                                   t-att-value="opt[0]"
+                                                                   t-att-checked="line.status == opt[0]"
+                                                                   t-att-disabled="is_locked"/>
+                                                            <label t-attf-class="btn btn-outline-#{opt[2]} btn-sm fw-bold"
+                                                                   t-att-for="'%s_%s' % (opt[0], line.id)"><t t-esc="opt[1]"/></label>
+                                                        </t>
                                                     </div>
-
+                                                    <input t-if="not is_locked" type="text" class="form-control form-control-sm mt-2"
+                                                           t-att-name="'remarks_%s' % line.id" maxlength="200"
+                                                           placeholder="Remark (optional)" t-att-value="line.remarks or ''"/>
+                                                    <small t-elif="line.remarks" class="text-muted d-block mt-1"><t t-esc="line.remarks"/></small>
                                                 </div>
                                             </div>
                                         </div>
                                     </t>
                                 </div>
                             </div>
-                            
-                            <div class="text-center mt-5 mb-5">
-                                <a href="/my/attendance/batches" class="btn btn-light px-4 py-3 me-2 rounded-pill fw-bold">Cancel</a>
-                                <button type="submit" class="btn btn-success btn-lg px-5 py-3 shadow rounded-pill fw-bold text-uppercase letter-spacing-1">
-                                    Save Attendance <i class="fa fa-save ms-2"/>
-                                </button>
-                            </div>
 
+                            <div class="d-flex flex-wrap justify-content-center gap-2 mt-4 mb-5">
+                                <a href="/my/attendance/batches" class="btn btn-light px-4 rounded-pill fw-bold">Back</a>
+                                <t t-if="not is_locked">
+                                    <button type="submit" name="action" value="draft" class="btn btn-outline-success px-4 rounded-pill fw-bold">
+                                        <i class="fa fa-save me-1"/>Save Draft
+                                    </button>
+                                    <button type="submit" name="action" value="lock" class="btn btn-success px-4 rounded-pill fw-bold shadow-sm"
+                                            onclick="return confirm('Submit and lock this attendance? Guardians of absent students may be notified on WhatsApp.');">
+                                        <i class="fa fa-lock me-1"/>Submit &amp; Lock
+                                    </button>
+                                </t>
+                            </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+                function attCount() {
+                    var counts = {present: 0, late: 0, half_day: 0, absent: 0, leave: 0};
+                    document.querySelectorAll('.att-radio:checked').forEach(function (r) { counts[r.value]++; });
+                    Object.keys(counts).forEach(function (k) {
+                        var el = document.querySelector('[data-count="' + k + '"]');
+                        if (el) { el.textContent = counts[k]; }
+                    });
+                }
+                function attMarkAll(status) {
+                    document.querySelectorAll('.att-radio[value="' + status + '"]').forEach(function (r) { r.checked = true; });
+                    attCount();
+                }
+                document.querySelectorAll('.att-radio').forEach(function (r) { r.addEventListener('change', attCount); });
+                attCount();
+            </script>
+        </t>
+    </template>
+
+    <!-- ===================== HISTORY ===================== -->
+    <template id="portal_attendance_history" name="Batch History">
+        <t t-call="website.layout">
+            <div class="container py-4 py-md-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                            <div>
+                                <h2 class="fw-bold text-success mb-0">Attendance History</h2>
+                                <p class="text-muted mb-0"><t t-esc="batch.name"/></p>
+                            </div>
+                            <a href="/my/attendance/batches" class="btn btn-outline-secondary rounded-pill fw-bold">
+                                <i class="fa fa-arrow-left me-2"/>Back to Batches
+                            </a>
+                        </div>
+                        <div class="card shadow-sm border-0 overflow-hidden">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th class="ps-4">Date</th>
+                                            <th>Session</th>
+                                            <th class="text-center">P</th>
+                                            <th class="text-center">L</th>
+                                            <th class="text-center">A</th>
+                                            <th class="text-center">%</th>
+                                            <th class="text-center">Status</th>
+                                            <th class="pe-4 text-end"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="attendances" t-as="attn">
+                                            <tr>
+                                                <td class="ps-4 fw-bold"><t t-esc="attn.date" t-options='{"widget": "date"}'/>
+                                                    <div class="small text-muted fw-normal"><t t-esc="attn.date.strftime('%A')"/></div></td>
+                                                <td><t t-esc="dict(attn._fields['session'].selection).get(attn.session)"/></td>
+                                                <td class="text-center text-success"><t t-esc="attn.present_count"/></td>
+                                                <td class="text-center" style="color:#fd7e14"><t t-esc="attn.late_count"/></td>
+                                                <td class="text-center text-danger fw-bold"><t t-esc="attn.absent_count"/></td>
+                                                <td class="text-center"><t t-esc="'%.0f' % attn.attendance_rate"/>%</td>
+                                                <td class="text-center">
+                                                    <span t-if="attn.state == 'locked'" class="badge bg-secondary"><i class="fa fa-lock me-1"/>Locked</span>
+                                                    <span t-else="" class="badge bg-warning text-dark">Draft</span>
+                                                </td>
+                                                <td class="pe-4 text-end">
+                                                    <a t-att-href="'/my/attendance/view?attendance_id=%s' % attn.id"
+                                                       class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                        <t t-esc="'View' if attn.state == 'locked' else 'Open'"/>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <tr t-if="not attendances">
+                                            <td colspan="8" class="text-center py-5 text-muted">No attendance records found for this batch.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </t>
     </template>
 
-
-    <!-- 
-        ===================================================================
-        PAGE: SUCCESS
-        =================================================================== 
-    -->
-    <!-- 
-        ===================================================================
-        PAGE: BATCH ATTENDANCE HISTORY
-        =================================================================== 
-    -->
-    <template id="portal_attendance_history" name="Batch History">
-        <t t-call="website.layout">
-            <div class="container py-5">
-                 <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                             <div>
-                                <h2 class="fw-bold text-success mb-0">Attendance History</h2>
-                                <p class="text-muted"><t t-esc="batch.name"/></p>
-                             </div>
-                             <a href="/my/attendance/batches" class="btn btn-outline-secondary rounded-pill fw-bold">
-                                <i class="fa fa-arrow-left me-2"/> Back to Batches
-                             </a>
-                        </div>
-
-                        <div class="card shadow border-0 rounded overflow-hidden">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0 align-middle">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th class="py-3 ps-4">Date</th>
-                                            <th class="py-3">Day</th>
-                                            <th class="py-3 text-center">Status</th>
-                                            <th class="py-3 pe-4 text-end">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="attendances" t-as="attn">
-                                            <tr>
-                                                <td class="ps-4 fw-bold text-dark">
-                                                    <t t-esc="attn.date" t-options='{"widget": "date"}'/>
-                                                </td>
-                                                <td class="text-muted">
-                                                    <span t-esc="attn.date.strftime('%A')"/>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span t-if="attn.state == 'locked'" class="badge bg-secondary">
-                                                        <i class="fa fa-lock me-1"/> Locked
-                                                    </span>
-                                                    <span t-else="" class="badge bg-success">
-                                                        <i class="fa fa-unlock me-1"/> Active
-                                                    </span>
-                                                </td>
-                                                <td class="pe-4 text-end">
-                                                    <a t-att-href="'/my/attendance/view?attendance_id=%s' % attn.id" 
-                                                       class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                                        View <i class="fa fa-eye ms-1"/>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        </t>
-                                        <tr t-if="not attendances">
-                                            <td colspan="4" class="text-center py-5 text-muted">
-                                                No attendance records found for this batch.
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                    </div>
-                 </div>
-            </div>
-        </t>
-    </template>
-
+    <!-- ===================== SUCCESS ===================== -->
     <template id="portal_attendance_success" name="Attendance Saved">
         <t t-call="website.layout">
-            <div class="container py-5 text-center" style="min-height: 50vh; display: flex; align-items: center; justify-content: center;">
-                <div class="alert alert-success border-0 shadow-lg p-5 rounded-lg bg-white" style="max-width: 600px;">
+            <div class="container py-5 text-center" style="min-height:50vh;display:flex;align-items:center;justify-content:center;">
+                <div class="border-0 shadow-lg p-5 rounded bg-white" style="max-width:600px;">
                     <div class="mb-4">
-                        <div class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                            <i class="fa fa-check" style="font-size: 3rem;"/>
+                        <div t-attf-class="rounded-circle d-inline-flex align-items-center justify-content-center #{'bg-secondary-subtle text-secondary' if locked else 'bg-success-subtle text-success'}"
+                             style="width:90px;height:90px;">
+                            <i t-attf-class="fa #{'fa-lock' if locked else 'fa-check'}" style="font-size:2.5rem;"/>
                         </div>
                     </div>
-                    <h3 class="fw-bold mb-3 text-dark">Attendance Saved!</h3>
-                    <p class="text-muted mb-4">The attendance record has been updated successfully.</p>
-                    
-                    <a href="/my/attendance/batches" class="btn btn-success btn-lg px-5 py-3 rounded-pill fw-bold shadow-sm">
-                        Back to Batches
-                    </a>
+                    <t t-if="locked">
+                        <h3 class="fw-bold mb-3 text-dark">Already Locked</h3>
+                        <p class="text-muted mb-4">This attendance was finalized earlier. Ask a manager to unlock it for changes.</p>
+                    </t>
+                    <t t-elif="submitted">
+                        <h3 class="fw-bold mb-3 text-dark">Attendance Submitted</h3>
+                        <p class="text-muted mb-4">
+                            <t t-esc="attendance.present_count + attendance.late_count + attendance.half_day_count"/> attending ·
+                            <t t-esc="attendance.absent_count"/> absent ·
+                            <t t-esc="attendance.leave_count"/> on leave.
+                        </p>
+                    </t>
+                    <t t-else="">
+                        <h3 class="fw-bold mb-3 text-dark">Draft Saved</h3>
+                        <p class="text-muted mb-4">Your changes are saved. Open the sheet again and use Submit &amp; Lock when finished.</p>
+                    </t>
+                    <a href="/my/attendance/batches" class="btn btn-success btn-lg px-5 rounded-pill fw-bold shadow-sm">Back to Batches</a>
                 </div>
             </div>
         </t>

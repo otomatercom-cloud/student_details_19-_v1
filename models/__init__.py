@@ -1,6 +1,7 @@
 from . import res_config_settings
 from . import student
 from . import student_attendance1
+from . import attendance_whatsapp
 from . import fee_structure
 from . import enrollment
 from . import razorpay_payment

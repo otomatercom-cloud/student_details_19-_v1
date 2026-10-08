@@ -89,4 +89,42 @@
         <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
     </record>
 
+    <!-- Attendance lines & WhatsApp log follow the batch visibility of each role -->
+    <record id="rule_att_line_course_coordinator" model="ir.rule">
+        <field name="name">Course Coordinator: Attendance Lines</field>
+        <field name="model_id" ref="model_st_attendance_line"/>
+        <field name="domain_force">[('batch_id.course_ids.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_course_coordinator'))]"/>
+    </record>
+    <record id="rule_att_line_academic_coordinator" model="ir.rule">
+        <field name="name">Academic Coordinator: Attendance Lines</field>
+        <field name="model_id" ref="model_st_attendance_line"/>
+        <field name="domain_force">[('batch_id.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_academic_coordinator'))]"/>
+    </record>
+    <record id="rule_att_line_manager_all" model="ir.rule">
+        <field name="name">Student Manager: All Attendance Lines</field>
+        <field name="model_id" ref="model_st_attendance_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
+    </record>
+    <record id="rule_att_wa_log_course_coordinator" model="ir.rule">
+        <field name="name">Course Coordinator: Attendance WhatsApp Log</field>
+        <field name="model_id" ref="model_otm_attendance_whatsapp_log"/>
+        <field name="domain_force">[('batch_id.course_ids.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_course_coordinator'))]"/>
+    </record>
+    <record id="rule_att_wa_log_academic_coordinator" model="ir.rule">
+        <field name="name">Academic Coordinator: Attendance WhatsApp Log</field>
+        <field name="model_id" ref="model_otm_attendance_whatsapp_log"/>
+        <field name="domain_force">[('batch_id.coordinator_ids', 'in', user.id)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_academic_coordinator'))]"/>
+    </record>
+    <record id="rule_att_wa_log_manager_all" model="ir.rule">
+        <field name="name">Student Manager: All Attendance WhatsApp Log</field>
+        <field name="model_id" ref="model_otm_attendance_whatsapp_log"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('student_details_19.group_student_manager'))]"/>
+    </record>
+
 </odoo>

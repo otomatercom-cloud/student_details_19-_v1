@@ -85,51 +85,59 @@ class Student(models.Model):
     att_start_date = fields.Date("Attendance From")
     att_end_date = fields.Date("Attendance To")
     present_days = fields.Float("Present Days", compute="_compute_attendance_summary")
+    late_days = fields.Float("Late Days", compute="_compute_attendance_summary")
     absent_days = fields.Float("Absent Days", compute="_compute_attendance_summary")
     half_days = fields.Float("Half Days", compute="_compute_attendance_summary")
+    leave_days = fields.Float("Leave Days", compute="_compute_attendance_summary")
     total_days = fields.Float("Total Working Days", compute="_compute_attendance_summary")
     attendance_percentage = fields.Float("Attendance %", compute="_compute_attendance_summary")
+    overall_attendance = fields.Float("Overall Attendance %", compute="_compute_overall_attendance",
+                                      help="All locked attendance sheets of the current batch.")
+    attendance_record_count = fields.Integer("Attendance Records",
+                                             compute="_compute_overall_attendance")
+    att_wa_opt_out = fields.Boolean(
+        string="Stop Attendance WhatsApp Alerts",
+        help="Tick if the guardian asked not to receive attendance alerts on WhatsApp.")
 
+    @api.depends('att_start_date', 'att_end_date')
     def _compute_attendance_summary(self):
-        AttendanceLine = self.env['st.attendance.line']
+        Line = self.env['st.attendance.line']
+        with_range = self.filtered(lambda s: s.id and s.att_start_date and s.att_end_date)
+        stats = {}
+        for student in with_range:
+            stats[student.id] = Line.get_student_stats(
+                [student.id], student.att_start_date, student.att_end_date)[student.id]
         for student in self:
-            student.present_days = 0.0
-            student.absent_days = 0.0
-            student.half_days = 0.0
-            student.total_days = 0.0
-            student.attendance_percentage = 0.0
+            st = stats.get(student.id, {})
+            student.present_days = st.get('present', 0)
+            student.late_days = st.get('late', 0)
+            student.half_days = st.get('half_day', 0)
+            student.absent_days = st.get('absent', 0)
+            student.leave_days = st.get('leave', 0)
+            student.total_days = st.get('working_days', 0)
+            student.attendance_percentage = st.get('percentage', 0.0)
 
-            if not student.att_start_date or not student.att_end_date:
-                continue
+    @api.depends('batch_id')
+    def _compute_overall_attendance(self):
+        Line = self.env['st.attendance.line']
+        ids = [sid for sid in self.ids if sid]
+        stats = Line.get_student_stats(ids) if ids else {}
+        for student in self:
+            st = stats.get(student.id, {})
+            student.overall_attendance = st.get('percentage', 0.0)
+            student.attendance_record_count = (
+                st.get('working_days', 0) + st.get('leave', 0))
 
-            domain = [
-                ('student_id', '=', student.id),
-                ('date', '>=', student.att_start_date),
-                ('date', '<=', student.att_end_date),
-                ('attendance_id.state', '=', 'locked'),
-            ]
-            # Odoo 19: _read_group replaces read_group
-            groups = AttendanceLine._read_group(
-                domain,
-                groupby=['status'],
-                aggregates=['__count'],
-            )
-            present = absent = half = 0
-            for (status,), count in groups:
-                if status == 'present':
-                    present = count
-                elif status == 'absent':
-                    absent = count
-                elif status == 'half_day':
-                    half = count
-
-            total = present + absent + half
-            student.present_days = present
-            student.absent_days = absent
-            student.half_days = half
-            student.total_days = total
-            if total:
-                student.attendance_percentage = ((present + (half * 0.5)) / total) * 100
+    def action_view_attendance(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _("Attendance - %s", self.name),
+            'res_model': 'st.attendance.line',
+            'view_mode': 'list,pivot',
+            'domain': [('student_id', '=', self.id)],
+            'context': {'search_default_locked': 1},
+        }
 
     @api.model
     def _get_financial_year_start(self, ref_date=None):
