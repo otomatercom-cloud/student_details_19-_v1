@@ -25,3 +25,6 @@ Meta template `student_marks_report` (Utility, English), 4 variables:
     Dear Parent, {{1}} scored *{{3}}* in {{2}}.
     ✅ Result: *{{4}}*
     Thank you, Logic School of Management
+
+## Next.js frontend API (v19.0.1.6.0)
+`controllers/api.py` exposes JSON endpoints under `/api/sdm/*` (session auth, ACL/record rules apply; `/api/sdm/public/*` is open for the join form). Used by the `student-frontend` Next.js app. Restart Odoo after deploying this release.
