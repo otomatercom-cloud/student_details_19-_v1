@@ -168,7 +168,12 @@ class SdmApi(http.Controller):
         env = request.env
         today = fields.Date.context_today(env['st.attendance'])
         Att = env['st.attendance']
+        absent = env['st.attendance.line'].search(
+            [('date', '=', today), ('status', '=', 'absent')], order='batch_id, student_id', limit=300)
         return {
+            'today': fields.Date.to_string(today),
+            'absent_today': [{'id': l.id, 'student_id': l.student_id.id, 'name': l.student_id.name,
+                              'batch': l.batch_id.name or '', 'session': l.session or ''} for l in absent],
             'students': env['student.details'].search_count([]),
             'batches': env['student.batch'].search_count([]),
             'courses': env['course.master'].search_count([]),
