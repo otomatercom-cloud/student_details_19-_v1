@@ -104,6 +104,9 @@ def _student_dict(s, full=False):
             'overall_attendance': round(s.overall_attendance, 1),
             'att_wa_opt_out': s.att_wa_opt_out,
             'has_photo': bool(s.photo),
+            'logic_join': s.logic_join or '', 'follow_social': s.follow_social,
+            'see_social': s.see_social, 'lead_reference_no': s.lead_reference_no or '',
+            'admission_officer_id': s.admission_officer_id.id or '',
         })
     return d
 
@@ -113,6 +116,18 @@ STUDENT_WRITE = [
     'school', 'college', 'father_name', 'father_phone', 'mother_name', 'mother_phone',
     'whatsapp_number', 'guardian_occupation', 'insta_id', 'joining_status', 'branch',
     'reference_code', 'admission_officer_text', 'roll_no', 'att_wa_opt_out',
+    'logic_join', 'follow_social', 'see_social', 'active',
+]
+
+# Mandatory fields (same as the public registration form)
+REQUIRED = [
+    ('name', 'Full name'), ('date_of_birth', 'Date of birth'), ('branch', 'Branch'),
+    ('joining_status', 'Joining status'), ('email', 'Email'), ('phone', 'Student phone'),
+    ('district', 'District'), ('qualification', 'Highest qualification'),
+    ('school', 'Previous school'), ('college', 'Previous college'),
+    ('father_name', "Father's name"), ('father_phone', "Father's phone"),
+    ('mother_name', "Mother's name"), ('mother_phone', "Mother's phone"),
+    ('whatsapp_number', "Parent's WhatsApp number"),
 ]
 
 
@@ -122,6 +137,8 @@ def _student_vals(body):
         vals['date_of_birth'] = body['date_of_birth'] or False
     if 'batch_id' in body:
         vals['batch_id'] = int(body['batch_id']) if body['batch_id'] else False
+    if 'admission_officer_id' in body:
+        vals['admission_officer_id'] = int(body['admission_officer_id']) if body['admission_officer_id'] else False
     if 'course_ids' in body:
         vals['course_ids'] = [(6, 0, [int(c) for c in body['course_ids'] or []])]
     return vals
@@ -152,6 +169,9 @@ class SdmApi(http.Controller):
             'branches': _sel('student.details', 'branch'),
             'districts': _sel('student.details', 'district'),
             'genders': _sel('student.details', 'gender'),
+            'logic_join': _sel('student.details', 'logic_join'),
+            'joining_statuses': _sel('student.details', 'joining_status'),
+            'required': [k for k, _l in REQUIRED] + ['photo'],
             'att_statuses': [{'value': k, 'label': v} for k, v in ATT_STATUSES],
             'att_sessions': [{'value': k, 'label': v} for k, v in ATT_SESSIONS],
             'exam_types': _sel('otm.exam', 'exam_type'),
@@ -292,6 +312,16 @@ class SdmApi(http.Controller):
     def student_save(self, body=None):
         Student = request.env['student.details']
         vals = _student_vals(body)
+        existing = Student.browse(int(body['id'])) if body.get('id') else None
+        missing = []
+        for key, label in REQUIRED:
+            val = vals[key] if key in vals else (existing[key] if existing else None)
+            if not (val and str(val).strip()):
+                missing.append(label)
+        if not (body.get('photo') or (existing and existing.photo)):
+            missing.append('Passport photo')
+        if missing:
+            raise ValidationError(_("Please fill the mandatory fields: %s.", ', '.join(missing)))
         if 'whatsapp_number' in vals and not _valid_whatsapp(vals['whatsapp_number']):
             raise ValidationError(_("Parent's WhatsApp number is mandatory (10-15 digits)."))
         if body.get('photo'):
