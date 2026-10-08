@@ -68,13 +68,13 @@ class ResConfigSettings(models.TransientModel):
     att_wa_institute_name = fields.Char(
         string="Name Shown in Messages", config_parameter=PARAM_PREFIX + 'institute_name',
         help="Defaults to the company name.")
-    att_wa_absent_message = fields.Text(
+    att_wa_absent_message = fields.Char(
         string="Absent Message", default=DEFAULT_ABSENT_MSG,
         config_parameter=PARAM_PREFIX + 'absent_message')
-    att_wa_late_message = fields.Text(
+    att_wa_late_message = fields.Char(
         string="Late Message", default=DEFAULT_LATE_MSG,
         config_parameter=PARAM_PREFIX + 'late_message')
-    att_wa_low_message = fields.Text(
+    att_wa_low_message = fields.Char(
         string="Low Attendance Message", default=DEFAULT_LOW_MSG,
         config_parameter=PARAM_PREFIX + 'low_message')
     att_wa_test_number = fields.Char(string="Test Number")
