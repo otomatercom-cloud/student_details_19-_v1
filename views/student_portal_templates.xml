@@ -287,8 +287,7 @@
                                                        pattern="[0-9+ ]{10,15}" inputmode="tel" title="Enter a valid WhatsApp number (10 digits)"/>
                                                 <label for="whatsapp_number">Parent's WhatsApp Number (Father / Mother)</label>
                                             </div>
-                                            <div class="sr-hint mt-2">Attendance and exam result updates will be sent to this number.</div>
-                                            <small class="text-danger d-none" id="wa_error">Please enter a valid parent WhatsApp number (10-15 digits).</small>
+                                                                                        <small class="text-danger d-none" id="wa_error">Please enter a valid parent WhatsApp number (10-15 digits).</small>
                                         </div>
                                     </div>
                                 </div>
