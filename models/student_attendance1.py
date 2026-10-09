@@ -126,6 +126,11 @@ class StudentAttendance(models.Model):
             return
         self.attendance_line_ids = [(5, 0, 0)] + self._prepare_student_lines()
 
+    @api.model
+    def _dashboard_timetable(self, day):
+        """Today's timetable rows for the dashboard (filled by student_timetable_19)."""
+        return []
+
     def _api_extra(self):
         """Extra, module-specific info for the JSON API (timetable adds time/faculty/room)."""
         return {}

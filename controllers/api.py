@@ -232,6 +232,7 @@ class SdmApi(http.Controller):
             'today': fields.Date.to_string(today),
             'absent_today': [{'id': l.id, 'student_id': l.student_id.id, 'name': l.student_id.name,
                               'batch': l.batch_id.name or '', 'session': l.session or ''} for l in absent],
+            'timetable_today': Att._dashboard_timetable(today) if can_att else [],
             'students': env['student.details'].search_count([]),
             'batches': env['student.batch'].search_count([]),
             'courses': env['course.master'].search_count([]),
