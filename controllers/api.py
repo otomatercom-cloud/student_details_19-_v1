@@ -84,12 +84,17 @@ def _is_manager():
                 or u.has_group('student_details_19.group_student_manager'))
 
 
-def _need_attendance():
-    """Attendance is for admins/managers and academic coordinators (not course coordinators)."""
-    from odoo.exceptions import AccessError
+def _can_attendance():
     u = request.env.user
-    if not (_is_manager() or u.has_group('student_details_19.group_academic_coordinator')):
-        raise AccessError(_("Attendance is available to administrators and academic coordinators only."))
+    return bool(_is_manager() or u.has_group('student_details_19.group_academic_coordinator')
+                or u.has_group('student_details_19.group_course_coordinator'))
+
+
+def _need_attendance():
+    """Attendance: administrators/managers, academic coordinators and course coordinators."""
+    from odoo.exceptions import AccessError
+    if not _can_attendance():
+        raise AccessError(_("Attendance is available to administrators and coordinators only."))
 
 
 def _valid_whatsapp(value):
@@ -114,7 +119,7 @@ def _student_dict(s, full=False):
     d = {
         'id': s.id, 'name': s.name, 'registration_no': s.registration_no or '',
         'roll_no': s.roll_no or '', 'phone': s.phone or '', 'email': s.email or '',
-        'batch': {'id': s.batch_id.id, 'name': s.batch_id.name} if s.batch_id else None,
+        'batch': {'id': s.sudo().batch_id.id, 'name': s.sudo().batch_id.name} if s.batch_id else None,
         'courses': [{'id': c.id, 'name': c.name} for c in s.course_ids],
         'branch': s.branch or '', 'whatsapp_number': s.whatsapp_number or '',
         'active': s.active,
@@ -182,7 +187,7 @@ class SdmApi(http.Controller):
         g = u.has_group
         return {
             'id': u.id, 'name': u.name, 'login': u.login,
-            'can_finance': _can_finance(), 'can_attendance': _is_manager() or g('student_details_19.group_academic_coordinator'), 'is_manager': _is_manager(), 'has_timetable': 'otm.timetable' in request.env,
+            'can_finance': _can_finance(), 'can_attendance': _can_attendance(), 'is_manager': _is_manager(), 'has_timetable': 'otm.timetable' in request.env,
             'roles': {
                 'manager': g('student_details_19.group_student_manager') or g('base.group_system'),
                 'academic': g('student_details_19.group_academic_coordinator'),
@@ -218,7 +223,7 @@ class SdmApi(http.Controller):
         env = request.env
         today = fields.Date.context_today(env['st.attendance'])
         Att = env['st.attendance']
-        can_att = _is_manager() or env.user.has_group('student_details_19.group_academic_coordinator')
+        can_att = _can_attendance()
         if can_att:
             Att._auto_generate(today)
         absent = env['st.attendance.line'].search(
@@ -379,7 +384,7 @@ class SdmApi(http.Controller):
         domain = [('active', '=', True)]
         if not (user.has_group('student_details_19.group_student_manager')
                 or user.has_group('base.group_system')):
-            domain.append(('coordinator_ids', 'in', user.id))
+            domain += ['|', ('coordinator_ids', 'in', user.id), ('course_ids.coordinator_ids', 'in', user.id)]
         today = fields.Date.context_today(env['st.attendance'])
         env['st.attendance']._auto_generate(today)   # no-op when the daily job already ran
         out = []
