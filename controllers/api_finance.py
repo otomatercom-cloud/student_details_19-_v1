@@ -3,7 +3,7 @@ from odoo import fields, http, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 
-from .api import api, P  # noqa: F401  (decorator shared with the main API)
+from .api import api, P, _need_finance, _can_finance  # noqa: F401  (shared with the main API)
 
 FEE_TYPES = [('lumpsum', 'Lump Sum'), ('installment', 'Installment'), ('monthly', 'Monthly'),
              ('quarterly', 'Quarterly'), ('semi_annual', 'Semi-Annual'), ('annual', 'Annual'),
@@ -95,23 +95,27 @@ class SdmFinanceApi(http.Controller):
     # -------------------------------------------------------------------- fees
     @api('/fees/meta')
     def fees_meta(self, body=None):
+        _need_finance()
         return {'fee_types': [{'value': k, 'label': v} for k, v in FEE_TYPES],
                 'gst_rates': GST_RATES}
 
     @api('/fees')
     def fees(self, body=None, batch_id=None, **kw):
+        _need_finance()
         domain = [('batch_ids', 'in', int(batch_id))] if batch_id else []
         rows = request.env['fee.structure'].with_context(active_test=False).search(domain)
         return [_fee_dict(f) for f in rows]
 
     @api('/fees/<int:fee_id>')
     def fee_get(self, fee_id, body=None, **kw):
+        _need_finance()
         f = request.env['fee.structure'].with_context(active_test=False).browse(fee_id)
         f.check_access('read')
         return _fee_dict(f, full=True)
 
     @api('/fees/save', methods=('POST',))
     def fee_save(self, body=None):
+        _need_finance()
         Fee = request.env['fee.structure'].with_context(active_test=False)
         rec = Fee.browse(int(body['id'])) if body.get('id') else None
         vals, rate = _fee_vals(body, rec)
@@ -151,11 +155,12 @@ class SdmFinanceApi(http.Controller):
     def student_finance(self, student_id, body=None, **kw):
         s = request.env['student.details'].browse(student_id)
         s.check_access('read')
+        fin_ok = _can_finance()
         return {
-            'wallet': {'total': s.wallet_total_fee, 'paid': s.wallet_paid, 'due': s.wallet_due,
+            'wallet': None if not fin_ok else {'total': s.wallet_total_fee, 'paid': s.wallet_paid, 'due': s.wallet_due,
                        'status': s.wallet_status,
                        'next_due': fields.Date.to_string(s.wallet_next_due) if s.wallet_next_due else ''},
-            'enrollments': [_enrollment_dict(e) for e in s.enrollment_ids],
+            'enrollments': [_enrollment_dict(e) for e in s.enrollment_ids] if fin_ok else [],
             'transfers': [{'id': t.id, 'from': t.from_batch_id.name, 'to': t.to_batch_id.name,
                            'date': fields.Date.to_string(t.transfer_date), 'reason': t.reason or '',
                            'by': t.transferred_by.name or ''} for t in s.transfer_history_ids.sorted('transfer_date', reverse=True)],
@@ -163,6 +168,7 @@ class SdmFinanceApi(http.Controller):
 
     @api('/enroll', methods=('POST',))
     def enroll(self, body=None):
+        _need_finance()
         env = request.env
         wiz = env['enrollment.wizard'].create({
             'student_id': int(body['student_id']), 'batch_id': int(body['batch_id']),
@@ -282,6 +288,7 @@ class SdmFinanceApi(http.Controller):
 
     @api('/finance/summary')
     def finance_summary(self, body=None):
+        _need_finance()
         Enr = request.env['student.enrollment']
         active = Enr.search([('status', '=', 'enrolled')])
         return {'total': sum(active.mapped('total_fee')), 'collected': sum(active.mapped('paid_amount')),

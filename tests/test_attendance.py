@@ -279,3 +279,26 @@ class TestMultiFeeEnrollment(TransactionCase):
         with self.assertRaises(ValidationError):   # two package fees are not allowed
             self.env['enrollment.wizard'].create({
                 'student_id': st.id, 'batch_id': batch.id, 'fee_structure_ids': [(6, 0, (lump | lump2).ids)]})
+
+
+@tagged('post_install', '-at_install', 'student_details_19')
+class TestDailySheets(TransactionCase):
+    def test_auto_generate_and_holiday(self):
+        from datetime import date
+        batch = self.env['student.batch'].create({'name': 'Auto B'})
+        self.env['student.details'].create({'name': 'Z1', 'batch_id': batch.id, 'joining_status': 'new', 'branch': 'kochi'})
+        Att = self.env['st.attendance']
+        self.env['ir.config_parameter'].sudo().set_param('student_details.att_weekly_off', '6')
+        mon = date(2026, 10, 5)
+        Att._auto_generate(mon)
+        sheet = Att.search([('batch_id', '=', batch.id), ('date', '=', mon)])
+        self.assertEqual(len(sheet), 1)
+        self.assertEqual(len(sheet.attendance_line_ids), 1)
+        Att._auto_generate(mon)  # idempotent
+        self.assertEqual(Att.search_count([('batch_id', '=', batch.id), ('date', '=', mon)]), 1)
+        sun = date(2026, 10, 11)
+        Att._auto_generate(sun)  # weekly off
+        self.assertFalse(Att.search([('batch_id', '=', batch.id), ('date', '=', sun)]))
+        self.env['st.attendance.holiday'].create({'name': 'H', 'date_from': date(2026, 10, 6), 'date_to': date(2026, 10, 6)})
+        Att._auto_generate(date(2026, 10, 6))
+        self.assertFalse(Att.search([('batch_id', '=', batch.id), ('date', '=', date(2026, 10, 6))]))

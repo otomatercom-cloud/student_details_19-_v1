@@ -39,6 +39,7 @@
             <list decoration-muted="state == 'draft'">
                 <field name="date"/>
                 <field name="session"/>
+                <field name="subject_id" optional="show"/>
                 <field name="batch_id"/>
                 <field name="coordinator_id" optional="show"/>
                 <field name="total_students" optional="show"/>
@@ -91,6 +92,7 @@
                             <field name="batch_id" readonly="state == 'locked'"/>
                             <field name="date" readonly="state == 'locked'"/>
                             <field name="session" readonly="state == 'locked'"/>
+                            <field name="subject_id" readonly="state == 'locked'"/>
                             <field name="topic" readonly="state == 'locked'"/>
                         </group>
                         <group string="Summary">

@@ -60,6 +60,16 @@
                         </group>
                     </group>
                     <div class="oe_title" style="margin-top:24px;">
+                        <h1>Daily Attendance Sheets</h1>
+                        <p class="text-muted">A draft sheet is created every day for each active batch (except weekly off days and holidays). Coordinators only open it, mark and submit.</p>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="att_auto_generate"/>
+                            <field name="att_weekly_off"/>
+                        </group>
+                    </group>
+                    <div class="oe_title" style="margin-top:24px;">
                         <h1>Attendance WhatsApp Alerts</h1>
                         <p class="text-muted">
                             Guardians receive a WhatsApp message when their child is marked absent

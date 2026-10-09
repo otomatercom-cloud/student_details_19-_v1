@@ -63,6 +63,35 @@ def api(route, methods=('GET',), auth='user'):
     return deco
 
 
+def _can_finance():
+    """Fees / enrollment / payment data is for managers and the admission team only."""
+    u = request.env.user
+    return bool(request.env.is_superuser() or u.has_group('base.group_system')
+                or u.has_group('student_details_19.group_student_manager')
+                or u.has_group('student_details_19.group_tl_admission')
+                or u.has_group('student_details_19.group_admission_officer'))
+
+
+def _need_finance():
+    from odoo.exceptions import AccessError
+    if not _can_finance():
+        raise AccessError(_("You do not have access to fee and payment data."))
+
+
+def _is_manager():
+    u = request.env.user
+    return bool(request.env.is_superuser() or u.has_group('base.group_system')
+                or u.has_group('student_details_19.group_student_manager'))
+
+
+def _need_attendance():
+    """Attendance is for admins/managers and academic coordinators (not course coordinators)."""
+    from odoo.exceptions import AccessError
+    u = request.env.user
+    if not (_is_manager() or u.has_group('student_details_19.group_academic_coordinator')):
+        raise AccessError(_("Attendance is available to administrators and academic coordinators only."))
+
+
 def _valid_whatsapp(value):
     return 10 <= len(re.sub(r'\D', '', value or '')) <= 15
 
@@ -153,6 +182,7 @@ class SdmApi(http.Controller):
         g = u.has_group
         return {
             'id': u.id, 'name': u.name, 'login': u.login,
+            'can_finance': _can_finance(), 'can_attendance': _is_manager() or g('student_details_19.group_academic_coordinator'), 'is_manager': _is_manager(), 'has_timetable': 'otm.timetable' in request.env,
             'roles': {
                 'manager': g('student_details_19.group_student_manager') or g('base.group_system'),
                 'academic': g('student_details_19.group_academic_coordinator'),
@@ -188,8 +218,11 @@ class SdmApi(http.Controller):
         env = request.env
         today = fields.Date.context_today(env['st.attendance'])
         Att = env['st.attendance']
+        can_att = _is_manager() or env.user.has_group('student_details_19.group_academic_coordinator')
+        if can_att:
+            Att._auto_generate(today)
         absent = env['st.attendance.line'].search(
-            [('date', '=', today), ('status', '=', 'absent')], order='batch_id, student_id', limit=300)
+            [('date', '=', today), ('status', '=', 'absent')], order='batch_id, student_id', limit=300) if can_att else env['st.attendance.line']
         return {
             'today': fields.Date.to_string(today),
             'absent_today': [{'id': l.id, 'student_id': l.student_id.id, 'name': l.student_id.name,
@@ -198,11 +231,12 @@ class SdmApi(http.Controller):
             'batches': env['student.batch'].search_count([]),
             'courses': env['course.master'].search_count([]),
             'exams': env['otm.exam'].search_count([]),
-            'attendance_today': Att.search_count([('date', '=', today)]),
-            'draft_attendance': Att.search_count([('state', '=', 'draft')]),
+            'attendance_today': Att.search_count([('date', '=', today), ('state', '=', 'locked')]) if can_att else 0,
+            'can_attendance': bool(can_att),
+            'draft_attendance': Att.search_count([('state', '=', 'draft'), ('date', '=', today)]) if can_att else 0,
             'draft_exams': env['otm.exam'].search_count([('state', '=', 'draft')]),
-            'wa_failed': env['otm.attendance.whatsapp.log'].search_count([('state', '=', 'failed')]),
-            'wa_sent': env['otm.attendance.whatsapp.log'].search_count([('state', '=', 'sent')]),
+            'wa_failed': env['otm.attendance.whatsapp.log'].search_count([('state', '=', 'failed')]) if can_att else 0,
+            'wa_sent': env['otm.attendance.whatsapp.log'].search_count([('state', '=', 'sent')]) if can_att else 0,
         }
 
     # ------------------------------------------------------------------ courses
@@ -339,6 +373,7 @@ class SdmApi(http.Controller):
     # --------------------------------------------------------------- attendance
     @api('/attendance/batches')
     def att_batches(self, body=None):
+        _need_attendance()
         env = request.env
         user = env.user
         domain = [('active', '=', True)]
@@ -346,12 +381,16 @@ class SdmApi(http.Controller):
                 or user.has_group('base.group_system')):
             domain.append(('coordinator_ids', 'in', user.id))
         today = fields.Date.context_today(env['st.attendance'])
+        env['st.attendance']._auto_generate(today)   # no-op when the daily job already ran
         out = []
         for b in env['student.batch'].search(domain):
+            off = env['st.attendance.holiday']._off_reason(b, today)
             sheets = env['st.attendance'].search([('batch_id', '=', b.id), ('date', '=', today)])
-            out.append({'id': b.id, 'name': b.name, 'student_count': b.student_count,
+            out.append({'id': b.id, 'name': b.name, 'student_count': b.student_count, 'off': off,
                         'today': [{'id': s.id, 'session': s.session, 'state': s.state,
-                                   'rate': round(s.attendance_rate, 1)} for s in sheets]})
+                                   'rate': round(s.attendance_rate, 1), 'slot_no': s.slot_no,
+                                   'subject': s.subject_id.name or '', 'extra': s._api_extra()}
+                                  for s in sheets.sorted(lambda x: (x._api_extra().get('start', 0), x.id))]})
         return out
 
     def _sheet_dict(self, sheet):
@@ -360,6 +399,8 @@ class SdmApi(http.Controller):
             'batch': {'id': sheet.batch_id.id, 'name': sheet.batch_id.name},
             'date': fields.Date.to_string(sheet.date), 'session': sheet.session,
             'topic': sheet.topic or '', 'remarks': sheet.remarks or '',
+            'subject': {'id': sheet.subject_id.id, 'name': sheet.subject_id.name} if sheet.subject_id else None,
+            'extra': sheet._api_extra(),
             'counts': {'total': sheet.total_students, 'present': sheet.present_count,
                        'late': sheet.late_count, 'half_day': sheet.half_day_count,
                        'absent': sheet.absent_count, 'leave': sheet.leave_count,
@@ -371,6 +412,7 @@ class SdmApi(http.Controller):
 
     @api('/attendance/open', methods=('POST',))
     def att_open(self, body=None):
+        _need_attendance()
         env = request.env
         batch = env['student.batch'].browse(int(body['batch_id']))
         batch.check_access('read')
@@ -379,21 +421,28 @@ class SdmApi(http.Controller):
             session = 'full_day'
         day = fields.Date.to_date(body.get('date')) if body.get('date') else fields.Date.context_today(env['st.attendance'])
         Att = env['st.attendance']
-        sheet = Att.search([('batch_id', '=', batch.id), ('date', '=', day), ('session', '=', session)], limit=1)
+        sheet = Att.search([('batch_id', '=', batch.id), ('date', '=', day), ('session', '=', session),
+                            ('slot_no', '=', int(body.get('slot_no') or 0))], limit=1)
+        off = env['st.attendance.holiday']._off_reason(batch, day)
+        subj = int(body['subject_id']) if body.get('subject_id') else False
+        if not sheet and off and not _is_manager():
+            raise UserError(_("No attendance needed on %s: %s.", day, off))
         if not sheet:
-            sheet = Att.create({'batch_id': batch.id, 'date': day, 'session': session})
+            sheet = Att.create({'batch_id': batch.id, 'date': day, 'session': session, 'subject_id': subj})
         elif sheet.state == 'draft':
             sheet.action_refresh_students()
         return self._sheet_dict(sheet)
 
     @api('/attendance/<int:sheet_id>')
     def att_get(self, sheet_id, body=None, **kw):
+        _need_attendance()
         sheet = request.env['st.attendance'].browse(sheet_id)
         sheet.check_access('read')
         return self._sheet_dict(sheet)
 
     @api('/attendance/<int:sheet_id>/save', methods=('POST',))
     def att_save(self, sheet_id, body=None, **kw):
+        _need_attendance()
         sheet = request.env['st.attendance'].browse(sheet_id)
         sheet.check_access('write')
         if sheet.state == 'locked':
@@ -411,12 +460,68 @@ class SdmApi(http.Controller):
 
     @api('/attendance/history')
     def att_history(self, body=None, batch_id=None, **kw):
+        _need_attendance()
         domain = [('batch_id', '=', int(batch_id))] if batch_id else []
         rows = request.env['st.attendance'].search(domain, limit=60)
         return [{'id': s.id, 'name': s.name, 'date': fields.Date.to_string(s.date),
                  'session': s.session, 'state': s.state, 'batch': s.batch_id.name,
                  'rate': round(s.attendance_rate, 1), 'absent': s.absent_count,
                  'total': s.total_students} for s in rows]
+
+    # ----------------------------------------------------------------- holidays
+    @api('/holidays')
+    def holidays(self, body=None, **kw):
+        _need_attendance()
+        rows = request.env['st.attendance.holiday'].search([])
+        ICP = request.env['ir.config_parameter'].sudo()
+        return {
+            'items': [{'id': h.id, 'name': h.name, 'date_from': fields.Date.to_string(h.date_from),
+                       'date_to': fields.Date.to_string(h.date_to),
+                       'batches': [{'id': b.id, 'name': b.name} for b in h.batch_ids]} for h in rows],
+            'weekly_off': [int(x) for x in request.env['st.attendance.holiday']._weekly_off_days()],
+            'auto': ICP.get_param('student_details.att_auto', 'on'),
+        }
+
+    @api('/holidays/save', methods=('POST',))
+    def holiday_save(self, body=None):
+        if not _is_manager():
+            from odoo.exceptions import AccessError
+            raise AccessError(_("Only administrators can change holidays."))
+        H = request.env['st.attendance.holiday']
+        vals = {'name': (body.get('name') or '').strip(), 'date_from': body.get('date_from') or False,
+                'date_to': body.get('date_to') or body.get('date_from') or False,
+                'batch_ids': [(6, 0, [int(i) for i in body.get('batch_ids') or []])]}
+        if not vals['name'] or not vals['date_from']:
+            raise ValidationError(_("Holiday name and date are required."))
+        rec = H.browse(int(body['id'])) if body.get('id') else H.create(vals)
+        if body.get('id'):
+            rec.write(vals)
+        # a sheet for that day may already have been generated: drop untouched drafts
+        for sh in request.env['st.attendance'].search([('date', '>=', rec.date_from), ('date', '<=', rec.date_to),
+                                                       ('state', '=', 'draft')]):
+            if H._off_reason(sh.batch_id, sh.date).startswith('Holiday') and not sh.topic:
+                sh.unlink()
+        return {'id': rec.id}
+
+    @api('/holidays/<int:hid>/delete', methods=('POST',))
+    def holiday_delete(self, hid, body=None, **kw):
+        if not _is_manager():
+            from odoo.exceptions import AccessError
+            raise AccessError(_("Only administrators can change holidays."))
+        request.env['st.attendance.holiday'].browse(hid).unlink()
+        return {'ok': True}
+
+    @api('/holidays/weekly-off', methods=('POST',))
+    def weekly_off_save(self, body=None):
+        if not _is_manager():
+            from odoo.exceptions import AccessError
+            raise AccessError(_("Only administrators can change this."))
+        days = sorted({int(d) for d in body.get('days') or [] if 0 <= int(d) <= 6})
+        ICP = request.env['ir.config_parameter'].sudo()
+        ICP.set_param('student_details.att_weekly_off', ','.join(str(d) for d in days) or '')
+        if body.get('auto') in ('on', 'off'):
+            ICP.set_param('student_details.att_auto', body['auto'])
+        return {'days': days}
 
     # -------------------------------------------------------------------- marks
     def _exam_dict(self, e, lines=False):

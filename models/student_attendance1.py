@@ -38,6 +38,10 @@ class StudentAttendance(models.Model):
     date = fields.Date(default=fields.Date.today, required=True, tracking=True)
     session = fields.Selection(ATT_SESSIONS, string="Session", default='full_day',
                                required=True, tracking=True)
+    subject_id = fields.Many2one('otm.exam.subject', string="Subject", tracking=True,
+                                 help="Same subject master used for exam marks.")
+    slot_no = fields.Integer(string="Period Ref", default=0, copy=False,
+                             help="0 = whole-day sheet. Timetable periods use the timetable slot id.")
     topic = fields.Char(string="Topic / Subject")
     remarks = fields.Text(string="Notes")
     coordinator_id = fields.Many2one('res.users', string="Taken By",
@@ -70,7 +74,7 @@ class StudentAttendance(models.Model):
                                       compute='_compute_wa_message_count')
 
     _batch_date_session_uniq = models.Constraint(
-        'unique(batch_id, date, session)',
+        'unique(batch_id, date, session, slot_no)',
         'Attendance for this batch, date and session already exists.',
     )
 
@@ -121,6 +125,35 @@ class StudentAttendance(models.Model):
             self.attendance_line_ids = [(5, 0, 0)]
             return
         self.attendance_line_ids = [(5, 0, 0)] + self._prepare_student_lines()
+
+    def _api_extra(self):
+        """Extra, module-specific info for the JSON API (timetable adds time/faculty/room)."""
+        return {}
+
+    @api.model
+    def _generate_for_batch(self, batch, day):
+        """Create the sheet(s) of one batch for one working day. Returns number created."""
+        if self.sudo().search_count([('batch_id', '=', batch.id), ('date', '=', day),
+                                     ('session', '=', 'full_day'), ('slot_no', '=', 0)]):
+            return 0
+        self.sudo().create({'batch_id': batch.id, 'date': day, 'session': 'full_day',
+                            'coordinator_id': False})
+        return 1
+
+    @api.model
+    def _auto_generate(self, day=None):
+        """Create the (draft) full-day sheet for every active batch on a working day.
+        Safe to call repeatedly: existing sheets are never touched."""
+        if self.env['ir.config_parameter'].sudo().get_param('student_details.att_auto', 'on') == 'off':
+            return 0
+        day = fields.Date.to_date(day) if day else fields.Date.context_today(self)
+        Holiday = self.env['st.attendance.holiday']
+        made = 0
+        for batch in self.env['student.batch'].sudo().search([('active', '=', True)]):
+            if not batch.student_ids or Holiday._off_reason(batch, day):
+                continue
+            made += self._generate_for_batch(batch, day)
+        return made
 
     @api.model_create_multi
     def create(self, vals_list):

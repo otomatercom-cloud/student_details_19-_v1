@@ -1,6 +1,7 @@
 from . import res_config_settings
 from . import student
 from . import student_attendance1
+from . import attendance_holiday
 from . import attendance_whatsapp
 from . import exam
 from . import fee_structure

@@ -168,7 +168,8 @@ class AttendanceWhatsappLog(models.Model):
             if student.att_wa_opt_out:
                 continue
             mtype = wanted[line.status]
-            key = 'line:%s:%s' % (line.id, mtype)
+            key = ('day:%s:%s:%s' % (student.id, attendance.date, mtype)) if attendance.slot_no \
+                else 'line:%s:%s' % (line.id, mtype)
             keys.append(key)
             number = self._guardian_number(student, cfg['country_code'])
             values = self._student_values(student, attendance.batch_id, cfg)

@@ -21,8 +21,8 @@ access_att_report_result_line_academic,att.report.result.line.academic,model_att
 access_student_details_course,student.details.course,model_student_details,student_details_19.group_course_coordinator,1,1,1,0
 access_student_batch_course,student.batch.course,model_student_batch,student_details_19.group_course_coordinator,1,1,1,0
 access_course_master_course,course.master.course,model_course_master,student_details_19.group_course_coordinator,1,1,1,0
-access_st_attendance_course,st.attendance.course,model_st_attendance,student_details_19.group_course_coordinator,1,1,1,0
-access_st_attendance_line_course,st.attendance.line.course,model_st_attendance_line,student_details_19.group_course_coordinator,1,1,1,0
+access_st_attendance_course,st.attendance.course,model_st_attendance,student_details_19.group_course_coordinator,0,0,0,0
+access_st_attendance_line_course,st.attendance.line.course,model_st_attendance_line,student_details_19.group_course_coordinator,0,0,0,0
 access_student_details_tl,student.details.tl,model_student_details,student_details_19.group_tl_admission,1,1,1,0
 access_student_batch_tl,student.batch.tl,model_student_batch,student_details_19.group_tl_admission,1,1,1,0
 access_course_master_tl,course.master.tl,model_course_master,student_details_19.group_tl_admission,1,1,1,0
@@ -57,7 +57,7 @@ access_batch_transfer_wizard_admission,batch.transfer.wizard.admission,model_bat
 access_batch_transfer_history_academic,batch.transfer.history.academic,model_batch_transfer_history,student_details_19.group_academic_coordinator,1,0,0,0
 access_att_wa_log_manager,att.wa.log.manager,model_otm_attendance_whatsapp_log,student_details_19.group_student_manager,1,1,1,1
 access_att_wa_log_academic,att.wa.log.academic,model_otm_attendance_whatsapp_log,student_details_19.group_academic_coordinator,1,0,0,0
-access_att_wa_log_course,att.wa.log.course,model_otm_attendance_whatsapp_log,student_details_19.group_course_coordinator,1,0,0,0
+access_att_wa_log_course,att.wa.log.course,model_otm_attendance_whatsapp_log,student_details_19.group_course_coordinator,0,0,0,0
 access_att_report_wizard_course,att.report.wizard.course,model_attendance_report_wizard,student_details_19.group_course_coordinator,1,1,1,1
 access_att_report_result_course,att.report.result.course,model_attendance_report_result,student_details_19.group_course_coordinator,1,1,1,1
 access_att_report_result_line_course,att.report.result.line.course,model_attendance_report_result_line,student_details_19.group_course_coordinator,1,1,1,1
@@ -70,3 +70,5 @@ access_otm_exam_line_course,otm.exam.line.course,model_otm_exam_line,student_det
 access_otm_exam_subject_manager,otm.exam.subject.manager,model_otm_exam_subject,student_details_19.group_student_manager,1,1,1,1
 access_otm_exam_subject_academic,otm.exam.subject.academic,model_otm_exam_subject,student_details_19.group_academic_coordinator,1,1,1,0
 access_otm_exam_subject_course,otm.exam.subject.course,model_otm_exam_subject,student_details_19.group_course_coordinator,1,1,1,0
+access_att_holiday_manager,st.attendance.holiday.manager,model_st_attendance_holiday,student_details_19.group_student_manager,1,1,1,1
+access_att_holiday_academic,st.attendance.holiday.academic,model_st_attendance_holiday,student_details_19.group_academic_coordinator,1,0,0,0

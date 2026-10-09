@@ -27,6 +27,15 @@ class ResConfigSettings(models.TransientModel):
              'Only the year segment in the number changes each April.',
     )
 
+    # ── Daily attendance sheets ──────────────────────────────────────────────
+    att_auto_generate = fields.Selection(
+        [('on', 'Create sheets automatically every day'), ('off', 'Off (manual only)')],
+        string="Daily Attendance Sheets", default='on', config_parameter='student_details.att_auto')
+    att_weekly_off = fields.Char(
+        string="Weekly Off Days", default='6', config_parameter='student_details.att_weekly_off',
+        help="Comma separated weekday numbers: 0=Mon 1=Tue 2=Wed 3=Thu 4=Fri 5=Sat 6=Sun. "
+             "Example: 6 (Sunday) or 5,6 (Sat+Sun). Holidays are added under Attendance > Holidays.")
+
     # ── Attendance WhatsApp alerts ───────────────────────────────────────────
     att_wa_enabled = fields.Boolean(
         string="Enable Attendance WhatsApp Alerts", config_parameter=PARAM_PREFIX + 'enabled')

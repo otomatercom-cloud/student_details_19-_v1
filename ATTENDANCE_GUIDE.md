@@ -34,3 +34,14 @@ Meta template `student_marks_report` (Utility, English), 4 variables:
 `/enrollments/<id>/payment|status|razorpay`, `/payments/<id>/refresh|mark-paid`, `/students/<id>/finance|transfer|overview`,
 `/finance/summary`. Handled API errors now roll back the transaction (no half-saved records).
 **Restart Odoo before upgrading.**
+
+## Daily auto sheets (v1.8.0)
+A daily cron ("Attendance: create today's sheets", ~00:05 IST) creates a draft full-day sheet for each active batch, skipping weekly-off days
+(Settings > Weekly Off Days, default Sunday), holidays (Attendance > Holidays, optionally per batch) and days outside the batch start/end dates.
+Coordinators open the sheet in the frontend, mark and submit. Access: administrators/managers and academic coordinators (own batches). Course coordinators have no attendance access.
+Restart Odoo before upgrading.
+
+## Subject on attendance + timetable (v1.9.0)
+Attendance sheets now have an optional Subject (same master as exam marks). Install `student_timetable_19` (needs faculty_19) to add classrooms and the weekly timetable:
+for a batch with periods on a weekday the daily job creates one sheet per period (subject, faculty, room, time); other batches keep one full-day sheet.
+Absent WhatsApp alerts are sent once per student per day for period sheets. Install order: student_details_19 -> faculty_19 -> student_timetable_19. Restart Odoo before upgrading/installing.
